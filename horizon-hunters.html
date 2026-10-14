@@ -1,0 +1,2408 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Horizon Hunters — Child Vaccination Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<style>
+:root {
+  --bg: #f3f7f8;
+  --bg2: #e8f2f4;
+  --surface: rgba(255,255,255,.72);
+  --surface-solid: #ffffff;
+  --border: rgba(15, 40, 45, .08);
+  --text: #0f2428;
+  --muted: #5a7278;
+  --accent: #0d9488;
+  --accent2: #0891b2;
+  --accent-soft: rgba(13,148,136,.12);
+  --danger: #e11d48;
+  --warn: #d97706;
+  --ok: #059669;
+  --shadow: 0 20px 50px rgba(15,40,45,.08);
+  --radius: 24px;
+  --nav: 280px;
+  --top: 72px;
+  --glass: blur(18px) saturate(1.4);
+  --ring: #0d9488;
+  --grad: linear-gradient(135deg, #0d9488 0%, #0891b2 55%, #0284c7 100%);
+  --mesh: radial-gradient(ellipse 80% 60% at 10% 0%, rgba(13,148,136,.18), transparent 50%),
+          radial-gradient(ellipse 60% 50% at 90% 10%, rgba(8,145,178,.14), transparent 45%),
+          radial-gradient(ellipse 50% 40% at 50% 100%, rgba(2,132,199,.1), transparent 50%);
+}
+[data-theme="dark"] {
+  --bg: #071416;
+  --bg2: #0c1c20;
+  --surface: rgba(18,32,36,.72);
+  --surface-solid: #122024;
+  --border: rgba(255,255,255,.08);
+  --text: #e8f4f6;
+  --muted: #8aa3aa;
+  --accent-soft: rgba(45,212,191,.14);
+  --shadow: 0 20px 50px rgba(0,0,0,.35);
+  --mesh: radial-gradient(ellipse 80% 60% at 10% 0%, rgba(13,148,136,.22), transparent 50%),
+          radial-gradient(ellipse 60% 50% at 90% 10%, rgba(8,145,178,.16), transparent 45%),
+          radial-gradient(ellipse 50% 40% at 50% 100%, rgba(2,132,199,.12), transparent 50%);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: "Plus Jakarta Sans", "Noto Sans Tamil", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.5;
+}
+html[lang="ta"] body,
+html[data-lang="ta"] body {
+  font-family: "Noto Sans Tamil", "Plus Jakarta Sans", system-ui, sans-serif;
+}
+body::before {
+  content: "";
+  position: fixed; inset: 0;
+  background: var(--mesh), var(--bg);
+  z-index: -1; pointer-events: none;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: inherit; text-decoration: none; }
+.app { display: grid; grid-template-columns: var(--nav) 1fr; min-height: 100vh; }
+.sidebar {
+  position: sticky; top: 0; height: 100vh; max-height: 100vh;
+  padding: 16px 12px;
+  background: var(--surface);
+  backdrop-filter: var(--glass);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 8px;
+  z-index: 40;
+  overflow: hidden;
+  min-height: 0;
+}
+.sidebar-top { flex-shrink: 0; display: grid; gap: 8px; padding: 0 4px; }
+.sidebar-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 4px 12px;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--accent) 45%, transparent) transparent;
+}
+.sidebar-scroll::-webkit-scrollbar { width: 6px; }
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--accent) 40%, transparent);
+  border-radius: 99px;
+}
+.brand {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 12px 8px;
+}
+.brand-mark {
+  width: 42px; height: 42px; border-radius: 14px;
+  background: var(--grad);
+  display: grid; place-items: center;
+  color: #fff; font-weight: 800; font-size: 16px;
+  box-shadow: 0 8px 24px rgba(13,148,136,.35);
+}
+.brand h1 { font-size: 16px; font-weight: 800; letter-spacing: -.02em; }
+.brand span { font-size: 11px; color: var(--muted); display: block; margin-top: 2px; }
+.nav-section { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 16px 14px 6px; font-weight: 600; }
+.nav-btn {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%; border: 0; background: transparent;
+  padding: 12px 14px; border-radius: 16px;
+  color: var(--muted); cursor: pointer; text-align: left;
+  transition: .2s ease;
+}
+.nav-btn:hover { background: var(--accent-soft); color: var(--text); transform: translateX(2px); }
+.nav-btn.active { background: var(--grad); color: #fff; box-shadow: 0 10px 24px rgba(13,148,136,.28); }
+.nav-ico { width: 22px; text-align: center; font-size: 15px; }
+.sidebar-foot {
+  flex-shrink: 0;
+  margin-top: 0;
+  padding: 12px 8px 8px;
+  display: grid; gap: 8px;
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+}
+.chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip {
+  border: 1px solid var(--border); background: var(--surface-solid);
+  padding: 8px 12px; border-radius: 999px; font-size: 12px; cursor: pointer;
+  color: var(--muted); transition: .2s;
+}
+.chip:hover, .chip.on { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+.main { min-width: 0; display: flex; flex-direction: column; }
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  height: var(--top);
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 28px;
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  backdrop-filter: var(--glass);
+  border-bottom: 1px solid var(--border);
+}
+.search-wrap {
+  flex: 1; max-width: 520px; position: relative;
+}
+.search-wrap input {
+  width: 100%; height: 46px; border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  backdrop-filter: var(--glass);
+  padding: 0 44px 0 44px;
+  outline: none; transition: .2s;
+}
+.search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.search-ico { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+.kbd {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  font-size: 11px; color: var(--muted); border: 1px solid var(--border);
+  padding: 3px 7px; border-radius: 8px; background: var(--surface-solid);
+}
+.top-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.icon-btn {
+  width: 42px; height: 42px; border-radius: 14px;
+  border: 1px solid var(--border); background: var(--surface);
+  display: grid; place-items: center; cursor: pointer; transition: .2s;
+  position: relative;
+}
+.icon-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+.badge-dot {
+  position: absolute; top: 8px; right: 8px; width: 8px; height: 8px;
+  background: var(--danger); border-radius: 50%; box-shadow: 0 0 0 2px var(--surface-solid);
+}
+.content { padding: 28px; max-width: 1400px; width: 100%; margin: 0 auto; }
+.view { display: none; animation: fadeUp .35s ease; }
+.view.active { display: block; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.hero-greeting {
+  font-family: "Instrument Serif", Georgia, serif;
+  font-size: clamp(34px, 4vw, 52px);
+  font-weight: 400; letter-spacing: -.02em;
+  margin-bottom: 8px;
+}
+.hero-sub { color: var(--muted); margin-bottom: 28px; font-size: 15px; max-width: 560px; }
+.insight-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr 1fr;
+  gap: 16px; margin-bottom: 20px;
+}
+.glass {
+  background: var(--surface);
+  backdrop-filter: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.card { padding: 22px; transition: .25s ease; }
+.card:hover { transform: translateY(-3px); box-shadow: 0 28px 60px rgba(15,40,45,.12); }
+.card-label { font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 10px; }
+.card-value { font-size: 28px; font-weight: 800; letter-spacing: -.03em; }
+.card-meta { font-size: 13px; color: var(--muted); margin-top: 6px; }
+.score-card {
+  display: flex; align-items: center; gap: 20px;
+  background: var(--grad); color: #fff; border: 0;
+}
+.score-card .card-label, .score-card .card-meta { color: rgba(255,255,255,.78); }
+.ring {
+  width: 92px; height: 92px; position: relative; flex-shrink: 0;
+}
+.ring svg { transform: rotate(-90deg); width: 92px; height: 92px; }
+.ring circle { fill: none; stroke-width: 8; }
+.ring .track { stroke: rgba(255,255,255,.22); }
+.ring .prog { stroke: #fff; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+.ring-val {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-weight: 800; font-size: 20px;
+}
+.risk-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 700;
+  background: rgba(255,255,255,.2);
+}
+.panel { padding: 24px; margin-bottom: 20px; }
+.panel-h {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 18px; gap: 12px; flex-wrap: wrap;
+}
+.panel-h h2 { font-size: 18px; font-weight: 750; letter-spacing: -.02em; }
+.panel-h p { color: var(--muted); font-size: 13px; }
+.actions-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+}
+.action-tile {
+  border: 1px solid var(--border); background: var(--surface-solid);
+  border-radius: 20px; padding: 18px; cursor: pointer; text-align: left;
+  transition: .22s; display: grid; gap: 8px;
+}
+.action-tile:hover { border-color: transparent; background: var(--accent-soft); transform: translateY(-2px); }
+.action-tile strong { font-size: 14px; }
+.action-tile span { font-size: 12px; color: var(--muted); }
+.btn {
+  border: 0; border-radius: 14px; padding: 11px 16px; cursor: pointer;
+  font-weight: 600; font-size: 13px; transition: .2s; position: relative; overflow: hidden;
+}
+.btn-primary { background: var(--grad); color: #fff; box-shadow: 0 10px 24px rgba(13,148,136,.28); }
+.btn-primary:hover { transform: translateY(-1px); filter: brightness(1.05); }
+.btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn-ghost:hover { background: var(--accent-soft); }
+.btn-danger { background: rgba(225,29,72,.12); color: var(--danger); }
+.btn::after {
+  content: ""; position: absolute; inset: 0; background: radial-gradient(circle at var(--x,50%) var(--y,50%), rgba(255,255,255,.35), transparent 40%);
+  opacity: 0; transition: .4s;
+}
+.btn:active::after { opacity: 1; transition: 0s; }
+.two-col { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; }
+.three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.table-wrap { overflow: auto; border-radius: 18px; border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; background: color-mix(in srgb, var(--surface-solid) 80%, transparent); }
+tr:hover td { background: var(--accent-soft); }
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700;
+}
+.pill-ok { background: rgba(5,150,105,.12); color: var(--ok); }
+.pill-warn { background: rgba(217,119,6,.14); color: var(--warn); }
+.pill-danger { background: rgba(225,29,72,.12); color: var(--danger); }
+.pill-info { background: var(--accent-soft); color: var(--accent); }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.field { position: relative; margin-bottom: 4px; }
+.field.full { grid-column: 1 / -1; }
+.field input, .field select, .field textarea {
+  width: 100%; border: 1px solid var(--border); background: var(--surface-solid);
+  border-radius: 16px; padding: 22px 14px 10px; outline: none; transition: .2s;
+}
+.field textarea { min-height: 100px; resize: vertical; padding-top: 26px; }
+.field label {
+  position: absolute; left: 14px; top: 16px; color: var(--muted); font-size: 13px;
+  pointer-events: none; transition: .18s;
+}
+.field input:focus, .field select:focus, .field textarea:focus,
+.field input:not(:placeholder-shown), .field textarea:not(:placeholder-shown) {
+  border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft);
+}
+.field input:focus + label, .field textarea:focus + label,
+.field input:not(:placeholder-shown) + label, .field textarea:not(:placeholder-shown) + label,
+.field select + label { top: 7px; font-size: 11px; color: var(--accent); font-weight: 600; }
+.timeline {
+  position: relative; padding: 12px 0 12px 28px;
+  max-height: 560px; overflow: auto;
+}
+.timeline::before {
+  content: ""; position: absolute; left: 10px; top: 0; bottom: 0; width: 3px;
+  background: linear-gradient(180deg, var(--accent), var(--accent2), transparent);
+  border-radius: 4px;
+}
+.tl-item {
+  position: relative; margin-bottom: 16px; padding: 16px 18px;
+  border-radius: 18px; border: 1px solid var(--border); background: var(--surface-solid);
+  transition: .2s; cursor: pointer;
+}
+.tl-item:hover { transform: translateX(4px); }
+.tl-item::before {
+  content: ""; position: absolute; left: -24px; top: 22px; width: 14px; height: 14px;
+  border-radius: 50%; border: 3px solid var(--surface-solid); background: var(--muted);
+}
+.tl-item.done::before { background: var(--ok); }
+.tl-item.current::before { background: var(--accent); box-shadow: 0 0 0 6px var(--accent-soft); animation: pulse 1.6s infinite; }
+.tl-item.upcoming::before { background: var(--accent2); }
+.tl-item.missed::before { background: var(--danger); }
+@keyframes pulse { 0%,100% { box-shadow: 0 0 0 4px var(--accent-soft); } 50% { box-shadow: 0 0 0 10px transparent; } }
+.tl-title { font-weight: 700; font-size: 14px; }
+.tl-meta { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.cert {
+  background: linear-gradient(160deg, #fff, #f0fafb);
+  border: 1px solid var(--border); border-radius: 28px; padding: 36px;
+  position: relative; overflow: hidden; color: #0f2428;
+}
+[data-theme="dark"] .cert { background: linear-gradient(160deg, #143038, #0f2428); color: #e8f4f6; }
+.cert::before {
+  content: ""; position: absolute; inset: 12px; border: 1px dashed color-mix(in srgb, var(--accent) 50%, transparent); border-radius: 22px; pointer-events: none;
+}
+.cert-head { display: flex; justify-content: space-between; align-items: start; gap: 16px; margin-bottom: 24px; }
+.cert h3 { font-family: "Instrument Serif", serif; font-size: 28px; font-weight: 400; }
+.cert-grid { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: center; }
+.cert-meta { display: grid; gap: 8px; font-size: 14px; }
+.cert-meta strong { display: block; font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+#qrBox { background: #fff; padding: 10px; border-radius: 12px; display: inline-block; }
+.map { height: 380px; border-radius: 20px; overflow: hidden; border: 1px solid var(--border); }
+.chart-box { height: 280px; position: relative; }
+.notif-list, .ai-messages { display: grid; gap: 10px; }
+.notif-item, .ai-msg {
+  padding: 14px 16px; border-radius: 16px; border: 1px solid var(--border);
+  background: var(--surface-solid); font-size: 13px;
+}
+.notif-item strong { display: block; margin-bottom: 4px; }
+.ai-panel {
+  position: fixed; right: 24px; bottom: 24px; width: 380px; max-width: calc(100vw - 32px);
+  height: 540px; max-height: calc(100vh - 48px);
+  z-index: 80; display: none; flex-direction: column;
+  border-radius: 28px; overflow: hidden;
+  background: var(--surface); backdrop-filter: var(--glass);
+  border: 1px solid var(--border); box-shadow: 0 30px 80px rgba(0,0,0,.22);
+}
+.ai-panel.open { display: flex; animation: fadeUp .25s ease; }
+.ai-head {
+  padding: 16px 18px; display: flex; align-items: center; gap: 10px;
+  background: var(--grad); color: #fff;
+}
+.ai-head h3 { font-size: 15px; font-weight: 700; }
+.ai-head p { font-size: 11px; opacity: .8; }
+.ai-body { flex: 1; overflow: auto; padding: 16px; display: grid; gap: 10px; align-content: start; }
+.msg { max-width: 88%; padding: 12px 14px; border-radius: 16px; font-size: 13px; line-height: 1.45; }
+.msg.bot { background: var(--surface-solid); border: 1px solid var(--border); border-bottom-left-radius: 6px; }
+.msg.user { margin-left: auto; background: var(--grad); color: #fff; border-bottom-right-radius: 6px; }
+.ai-foot { padding: 12px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+.ai-foot input {
+  flex: 1; border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px;
+  background: var(--surface-solid); outline: none;
+}
+.fab {
+  position: fixed; right: 24px; bottom: 24px; z-index: 70;
+  width: 58px; height: 58px; border-radius: 20px; border: 0;
+  background: var(--grad); color: #fff; font-size: 22px; cursor: pointer;
+  box-shadow: 0 16px 40px rgba(13,148,136,.4);
+  transition: .2s;
+}
+.fab:hover { transform: scale(1.05); }
+.fab.hidden { display: none; }
+.overlay {
+  position: fixed; inset: 0; background: rgba(7,20,22,.45);
+  backdrop-filter: blur(8px); z-index: 90; display: none; place-items: center; padding: 20px;
+}
+.overlay.open { display: grid; }
+.cmd {
+  width: min(640px, 100%); background: var(--surface-solid); border-radius: 24px;
+  border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow);
+}
+.cmd input {
+  width: 100%; border: 0; border-bottom: 1px solid var(--border);
+  padding: 18px 20px; background: transparent; outline: none; font-size: 16px;
+}
+.cmd-list { max-height: 360px; overflow: auto; padding: 8px; }
+.cmd-item {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+  border-radius: 14px; cursor: pointer; color: var(--muted);
+}
+.cmd-item:hover, .cmd-item.active { background: var(--accent-soft); color: var(--text); }
+.cmd-item kbd { margin-left: auto; font-size: 11px; }
+.skeleton {
+  background: linear-gradient(90deg, var(--border), color-mix(in srgb, var(--muted) 15%, transparent), var(--border));
+  background-size: 200% 100%; animation: shimmer 1.2s infinite; border-radius: 12px;
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.badges { display: flex; flex-wrap: wrap; gap: 10px; }
+.badge-card {
+  padding: 14px 16px; border-radius: 18px; border: 1px solid var(--border);
+  background: var(--surface-solid); min-width: 140px; text-align: center;
+}
+.badge-card .emoji { font-size: 24px; margin-bottom: 6px; }
+.badge-card.locked { opacity: .45; filter: grayscale(1); }
+.toast-wrap { position: fixed; top: 20px; right: 20px; z-index: 120; display: grid; gap: 8px; }
+.toast {
+  padding: 12px 16px; border-radius: 14px; background: var(--surface-solid);
+  border: 1px solid var(--border); box-shadow: var(--shadow); font-size: 13px;
+  animation: fadeUp .25s ease;
+}
+.mobile-toggle { display: none; }
+.search-drop {
+  position: absolute; top: calc(100% + 8px); left: 0; right: 0;
+  background: var(--surface-solid); border: 1px solid var(--border);
+  border-radius: 16px; box-shadow: var(--shadow); display: none; z-index: 50;
+  max-height: 320px; overflow: auto; padding: 8px;
+}
+.search-drop.open { display: block; }
+.search-hit { padding: 10px 12px; border-radius: 12px; cursor: pointer; font-size: 13px; }
+.search-hit:hover { background: var(--accent-soft); }
+.search-hit small { display: block; color: var(--muted); }
+.stat-mini { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.stat-mini:last-child { border: 0; }
+.progress-bar { height: 8px; border-radius: 999px; background: var(--border); overflow: hidden; margin-top: 8px; }
+.progress-bar > i { display: block; height: 100%; background: var(--grad); border-radius: inherit; transition: width 1s ease; }
+.empty { text-align: center; padding: 40px 20px; color: var(--muted); }
+.ocr-preview { white-space: pre-wrap; font-size: 12px; max-height: 160px; overflow: auto; background: var(--bg2); padding: 12px; border-radius: 12px; }
+.role-gate {
+  position: fixed; inset: 0; z-index: 200;
+  display: none; place-items: center; padding: 24px;
+  background: color-mix(in srgb, var(--bg) 75%, transparent);
+  backdrop-filter: blur(20px) saturate(1.3);
+}
+.role-gate.open { display: grid; }
+.role-gate-card {
+  width: min(980px, 100%);
+  padding: 36px 32px;
+  border-radius: 32px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  backdrop-filter: var(--glass);
+}
+.role-gate-card h2 {
+  font-family: "Instrument Serif", Georgia, serif;
+  font-size: clamp(32px, 4vw, 44px);
+  font-weight: 400; letter-spacing: -.02em; margin-bottom: 8px;
+}
+.role-gate-card > p { color: var(--muted); margin-bottom: 28px; max-width: 520px; }
+.role-pick {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+}
+.role-tile {
+  text-align: left; cursor: pointer; border: 1px solid var(--border);
+  background: var(--surface-solid); border-radius: 24px; padding: 24px 20px;
+  transition: .25s ease; display: grid; gap: 10px; min-height: 220px;
+}
+.role-tile:hover { transform: translateY(-4px); border-color: transparent; box-shadow: var(--shadow); }
+.role-tile.parent:hover { background: linear-gradient(160deg, rgba(13,148,136,.12), var(--surface-solid)); }
+.role-tile.hospital:hover { background: linear-gradient(160deg, rgba(8,145,178,.14), var(--surface-solid)); }
+.role-tile.admin:hover { background: linear-gradient(160deg, rgba(2,132,199,.14), var(--surface-solid)); }
+.role-tile .role-ico {
+  width: 48px; height: 48px; border-radius: 16px; display: grid; place-items: center;
+  font-size: 22px; background: var(--accent-soft); color: var(--accent); font-weight: 800;
+}
+.role-tile.hospital .role-ico { background: rgba(8,145,178,.14); color: #0891b2; }
+.role-tile.admin .role-ico { background: rgba(2,132,199,.14); color: #0284c7; }
+.role-tile strong { font-size: 18px; letter-spacing: -.02em; }
+.role-tile span { font-size: 13px; color: var(--muted); line-height: 1.45; }
+.role-tile ul { margin: 4px 0 0; padding-left: 16px; color: var(--muted); font-size: 12px; display: grid; gap: 4px; }
+.role-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: 999px; font-size: 12px; font-weight: 700;
+  background: var(--accent-soft); color: var(--accent); border: 1px solid transparent;
+  cursor: pointer; transition: .2s;
+}
+.role-badge:hover { filter: brightness(1.05); }
+.role-badge[data-role="hospital"] { background: rgba(8,145,178,.14); color: #0891b2; }
+.role-badge[data-role="admin"] { background: rgba(2,132,199,.14); color: #0284c7; }
+.nav-btn[hidden], .nav-section[hidden], [data-role-only][hidden] { display: none !important; }
+.bridge {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px;
+}
+.bridge-card {
+  border: 1px dashed var(--border); border-radius: 18px; padding: 14px 16px;
+  background: color-mix(in srgb, var(--surface-solid) 80%, transparent);
+  font-size: 13px; cursor: pointer; transition: .2s;
+}
+.bridge-card:hover { border-style: solid; background: var(--accent-soft); transform: translateY(-2px); }
+.bridge-card strong { display: block; margin-bottom: 4px; font-size: 13px; }
+.bridge-card span { color: var(--muted); font-size: 12px; }
+.app.role-parent { --ring: #0d9488; }
+.app.role-hospital { --ring: #0891b2; --grad: linear-gradient(135deg, #0891b2 0%, #0284c7 60%, #0d9488 100%); }
+.app.role-admin { --ring: #0284c7; --grad: linear-gradient(135deg, #0284c7 0%, #0369a1 55%, #0d9488 100%); }
+@media (max-width: 900px) {
+  .role-pick, .bridge { grid-template-columns: 1fr; }
+}
+@media (max-width: 1100px) {
+  .insight-grid { grid-template-columns: 1fr 1fr; }
+  .actions-grid, .three-col { grid-template-columns: 1fr 1fr; }
+  .two-col { grid-template-columns: 1fr; }
+}
+@media (max-width: 860px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar {
+    position: fixed; left: 0; top: 0; width: min(300px, 86vw);
+    height: 100vh; max-height: 100dvh;
+    transform: translateX(-105%); transition: .25s; z-index: 100;
+  }
+  .sidebar.open { transform: none; }
+  .mobile-toggle { display: grid; }
+  .insight-grid, .actions-grid, .form-grid, .three-col { grid-template-columns: 1fr; }
+  .content { padding: 18px; }
+  .topbar { padding: 0 14px; }
+}
+</style>
+</head>
+<body>
+<div class="role-gate open" id="roleGate">
+  <div class="role-gate-card glass" id="roleGateChoose">
+    <h2 data-i18n="gate_title">Who’s using Horizon Hunters today?</h2>
+    <p data-i18n="gate_sub">Each role signs in on its own — Parent, Hospital, and Admin see only what they're allowed to. A dose logged in Hospital still instantly updates that child's Parent certificate and Admin coverage.</p>
+    <div class="role-pick">
+      <button type="button" class="role-tile parent" data-pick-role="parent">
+        <div class="role-ico">◉</div>
+        <strong>Parent</strong>
+        <span>Sign in with your registered phone number. You'll only ever see your own children.</span>
+        <ul>
+          <li>AI family home</li>
+          <li>Register & timeline</li>
+          <li>Book camps · PDF certs</li>
+        </ul>
+      </button>
+      <button type="button" class="role-tile hospital" data-pick-role="hospital">
+        <div class="role-ico">✚</div>
+        <strong>Hospital</strong>
+        <span>Sign in with your hospital ID and password. Hospitals can view every registered child.</span>
+        <ul>
+          <li>Dose logging queue</li>
+          <li>QR verification desk</li>
+          <li>Synced child records</li>
+        </ul>
+      </button>
+      <button type="button" class="role-tile admin" data-pick-role="admin">
+        <div class="role-ico">◎</div>
+        <strong>Admin</strong>
+        <span>Sign in with your admin username and password. Full network command center access.</span>
+        <ul>
+          <li>Live coverage charts</li>
+          <li>Camp & hospital ops</li>
+          <li>Cross-role activity feed</li>
+        </ul>
+      </button>
+    </div>
+  </div>
+  <div class="role-gate-card glass" id="roleGateLogin" style="display:none">
+    <h2 id="loginTitle">Sign in</h2>
+    <p id="loginSub" style="color:var(--muted);margin-bottom:16px">Enter your credentials to continue.</p>
+    <div class="chip-row" style="margin-bottom:20px">
+      <button type="button" class="chip on" id="tabSignin" data-auth-mode="signin">Sign In</button>
+      <button type="button" class="chip" id="tabSignup" data-auth-mode="signup">New User? Sign Up</button>
+    </div>
+    <form id="loginForm" class="form-grid" style="max-width:420px">
+      <div id="loginFields" class="form-grid" style="grid-column:1/-1;padding:0"></div>
+      <div id="loginError" style="grid-column:1/-1;color:var(--danger);font-size:13px;min-height:16px"></div>
+      <div class="field full" style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-primary" type="submit" id="loginSubmitBtn">Sign In</button>
+        <button class="btn btn-ghost" type="button" id="loginBack">← Choose a different role</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="app role-parent" id="appShell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-top">
+      <div class="brand">
+        <div class="brand-mark">H</div>
+        <div>
+          <h1>Horizon Hunters</h1>
+          <span data-i18n="tagline">Child Vaccination Intelligence</span>
+        </div>
+      </div>
+      <button type="button" class="role-badge" id="roleBadge" data-role="parent" title="Switch role">◉ Parent workspace</button>
+    </div>
+    <nav class="sidebar-scroll" id="sidebarNav" aria-label="Main">
+      <div class="nav-section" data-nav-section="home" data-i18n="nav_workspace">Workspace</div>
+      <button class="nav-btn active" data-view="home" data-roles="parent"><span class="nav-ico">✦</span><span data-i18n="nav_family">Family Home</span></button>
+      <button class="nav-btn" data-view="hospital" data-roles="hospital"><span class="nav-ico">✚</span><span data-i18n="nav_clinic">Clinic Home</span></button>
+      <button class="nav-btn" data-view="admin" data-roles="admin"><span class="nav-ico">◎</span><span data-i18n="nav_network">Network Home</span></button>
+      <button class="nav-btn" data-view="parent" data-roles="parent,hospital,admin"><span class="nav-ico">◉</span><span data-i18n="nav_registry">Children Registry</span></button>
+      <div class="nav-section" data-nav-section="care" data-i18n="nav_care">Care</div>
+      <button class="nav-btn" data-view="register" data-roles="parent,hospital"><span class="nav-ico">＋</span><span data-i18n="nav_register">Register Child</span></button>
+      <button class="nav-btn" data-view="timeline" data-roles="parent,hospital,admin"><span class="nav-ico">◷</span><span data-i18n="nav_timeline">Timeline</span></button>
+      <button class="nav-btn" data-view="camps" data-roles="parent,hospital,admin"><span class="nav-ico">⌂</span><span data-i18n="nav_camps">Camps</span></button>
+      <button class="nav-btn" data-view="certificate" data-roles="parent,hospital,admin"><span class="nav-ico">▤</span><span data-i18n="nav_cert">Certificate</span></button>
+      <button class="nav-btn" data-view="verify" data-roles="hospital,admin,parent"><span class="nav-ico">▣</span><span data-i18n="nav_verify">QR Verify</span></button>
+      <div class="nav-section" data-nav-section="ops" data-i18n="nav_ops">Operations</div>
+      <button class="nav-btn" data-view="analytics" data-roles="admin,hospital"><span class="nav-ico">◫</span><span data-i18n="nav_analytics">Analytics</span></button>
+      <button class="nav-btn" data-view="aefi" data-roles="parent,hospital,admin"><span class="nav-ico">⚠</span><span data-i18n="nav_aefi">AEFI Report</span></button>
+      <button class="nav-btn" data-view="notifications" data-roles="parent,hospital,admin"><span class="nav-ico">🔔</span><span data-i18n="nav_notif">Notifications</span></button>
+      <button class="nav-btn" data-view="ocr" data-roles="parent,hospital"><span class="nav-ico">⬚</span><span data-i18n="nav_ocr">OCR Import</span></button>
+      <button class="nav-btn" data-view="map" data-roles="parent,hospital,admin"><span class="nav-ico">⌖</span><span data-i18n="nav_map">Camp Map</span></button>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="chip-row">
+        <button class="chip" id="themeToggle" type="button" data-i18n="chip_theme">◐ Theme</button>
+        <button class="chip" id="langToggle" type="button" title="EN → हिं → தமிழ்">EN</button>
+        <button class="chip" id="voiceToggle" type="button" data-i18n="chip_voice">🎙 Voice</button>
+        <button class="chip" id="switchRoleBtn" type="button" data-i18n="chip_role">⇄ Role</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn mobile-toggle" id="menuToggle" type="button" aria-label="Menu">☰</button>
+      <div class="search-wrap">
+        <span class="search-ico">⌕</span>
+        <input id="globalSearch" type="search" placeholder="Search children, camps, hospitals…" data-i18n-placeholder="search_ph" autocomplete="off" />
+        <span class="kbd">⌘K</span>
+        <div class="search-drop" id="searchDrop"></div>
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn" id="cmdOpen" type="button" title="Command palette">⌘</button>
+        <button class="icon-btn" id="notifOpen" type="button" title="Notifications">🔔<span class="badge-dot" id="notifDot"></span></button>
+        <button class="btn btn-primary" id="topCta" data-view-jump="register" type="button">Register</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <!-- PARENT HOME -->
+      <section class="view active" id="view-home">
+        <div class="panel-h" style="align-items:flex-start">
+          <div>
+            <div class="pill pill-info" style="margin-bottom:10px">Parent workspace</div>
+            <div class="hero-greeting" id="greeting">Good Morning</div>
+            <p class="hero-sub" data-i18n="home_sub">Your family's protection, predicted and guided by Horizon Hunters — schedules, camps, and certificates in one calm place.</p>
+          </div>
+        </div>
+        <div class="insight-grid" id="insightGrid">
+          <div class="glass card score-card">
+            <div class="ring" id="homeRing"><svg viewBox="0 0 92 92"><circle class="track" cx="46" cy="46" r="38"/><circle class="prog" id="homeRingProg" cx="46" cy="46" r="38" stroke-dasharray="238.76" stroke-dashoffset="238.76"/></svg><div class="ring-val" id="homeScoreVal">0%</div></div>
+            <div>
+              <div class="card-label" data-i18n="protection">Protection Score</div>
+              <div class="card-value" id="homeScoreTxt">—</div>
+              <div class="card-meta"><span class="risk-badge" id="homeRisk">Risk —</span></div>
+            </div>
+          </div>
+          <div class="glass card"><div class="card-label" data-i18n="next_vax">Next Vaccine</div><div class="card-value" id="homeNext" style="font-size:22px">—</div><div class="card-meta" id="homeNextMeta">—</div></div>
+          <div class="glass card"><div class="card-label" data-i18n="nearby">Nearby Camp</div><div class="card-value" id="homeCamp" style="font-size:22px">—</div><div class="card-meta" id="homeCampMeta">—</div></div>
+          <div class="glass card"><div class="card-label" data-i18n="risk">Risk Level</div><div class="card-value" id="homeRiskBig" style="font-size:22px">—</div><div class="card-meta" id="homeRiskMeta">Based on completion</div></div>
+        </div>
+        <div class="two-col">
+          <div class="glass panel">
+            <div class="panel-h"><div><h2 data-i18n="today_rec">Today's Recommendation</h2><p id="dailyTip">—</p></div></div>
+            <div class="panel-h" style="margin-top:8px"><div><h2 data-i18n="suggested">Suggested Actions</h2></div></div>
+            <div class="actions-grid" id="homeActions"></div>
+            <div class="bridge" id="parentBridge"></div>
+          </div>
+          <div class="glass panel">
+            <div class="panel-h"><div><h2 data-i18n="gamify">Protection Journey</h2><p data-i18n="streak_hint">Streaks & achievements</p></div><span class="pill pill-info" id="streakPill">🔥 0 day streak</span></div>
+            <div class="badges" id="badgeRow"></div>
+            <div style="margin-top:16px">
+              <div class="stat-mini"><span data-i18n="completion">Vaccination Completion</span><strong id="homeCompletion">0%</strong></div>
+              <div class="progress-bar"><i id="homeCompletionBar" style="width:0%"></i></div>
+              <div class="stat-mini"><span data-i18n="missed">Missed Vaccines</span><strong id="homeMissed">0</strong></div>
+              <div class="stat-mini"><span data-i18n="upcoming">Upcoming</span><strong id="homeUpcoming">0</strong></div>
+              <div class="stat-mini"><span>Hospital updates synced</span><strong id="parentSyncHint">Live</strong></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PARENT REGISTRY -->
+      <section class="view" id="view-parent">
+        <div class="panel-h"><div>
+          <div class="pill pill-info" style="margin-bottom:10px">Shared registry · visible to Hospital & Admin</div>
+          <h2 class="hero-greeting" style="font-size:36px" data-i18n="parent_dash">Children Registry</h2>
+          <p class="hero-sub" data-i18n="parent_sub">Your children, upcoming doses, and health insights. Hospital dose logs appear here automatically.</p>
+        </div></div>
+        <div class="three-col" id="parentCards"></div>
+        <div class="glass panel" style="margin-top:16px">
+          <div class="panel-h"><h2 data-i18n="your_children">Your Children</h2><button class="btn btn-primary" data-view-jump="register">+ Add</button></div>
+          <div class="table-wrap"><table><thead><tr><th>Name</th><th>DOB</th><th>Gender</th><th>Coverage</th><th>Next</th><th>Last hospital sync</th><th></th></tr></thead><tbody id="parentTable"></tbody></table></div>
+        </div>
+        <div class="bridge" id="parentRegistryBridge"></div>
+      </section>
+
+      <!-- HOSPITAL -->
+      <section class="view" id="view-hospital">
+        <div class="panel-h" style="align-items:flex-start"><div>
+          <div class="pill pill-info" style="margin-bottom:10px;background:rgba(8,145,178,.14);color:#0891b2">Hospital workspace</div>
+          <h2 class="hero-greeting" style="font-size:36px" id="hospGreeting">Clinic Home</h2>
+          <p class="hero-sub">Log doses for children registered by parents. Every entry updates Parent certificates and Admin coverage instantly.</p>
+        </div></div>
+        <div class="insight-grid" id="hospStats"></div>
+        <div class="two-col">
+          <div class="glass panel">
+            <div class="panel-h"><h2>Log Vaccination</h2><span class="pill pill-ok">Writes to shared child record</span></div>
+            <form id="doseForm" class="form-grid">
+              <div class="field"><select id="doseChild" required></select><label>Child</label></div>
+              <div class="field"><select id="doseVaccine" required></select><label>Vaccine</label></div>
+              <div class="field"><input id="doseDate" type="date" placeholder=" " required /><label>Date</label></div>
+              <div class="field"><input id="doseBatch" type="text" placeholder=" " /><label>Batch No.</label></div>
+              <div class="field"><select id="doseHospital"></select><label>Hospital</label></div>
+              <div class="field"><input id="doseStaff" type="text" placeholder=" " /><label>Staff name</label></div>
+              <div class="field full"><button class="btn btn-primary" type="submit">Record Dose</button></div>
+            </form>
+          </div>
+          <div class="glass panel">
+            <div class="panel-h"><h2>Due today / overdue</h2><button class="btn btn-ghost" data-view-jump="verify" type="button">QR Desk</button></div>
+            <div id="hospQueue"></div>
+          </div>
+        </div>
+        <div class="two-col" style="margin-top:16px">
+          <div class="glass panel">
+            <div class="panel-h"><h2>Partner hospitals</h2></div>
+            <div id="hospList"></div>
+          </div>
+          <div class="glass panel">
+            <div class="panel-h"><h2>Interconnect</h2><p>Jump across roles with shared context</p></div>
+            <div class="bridge" id="hospBridge" style="margin:0;grid-template-columns:1fr"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ADMIN -->
+      <section class="view" id="view-admin">
+        <div class="panel-h" style="align-items:flex-start"><div>
+          <div class="pill pill-info" style="margin-bottom:10px;background:rgba(2,132,199,.14);color:#0284c7">Admin workspace</div>
+          <h2 class="hero-greeting" style="font-size:36px" id="adminGreeting">Network Home</h2>
+          <p class="hero-sub">System-wide coverage from Parent registrations + Hospital dose logs. Publish camps parents can book.</p>
+        </div></div>
+        <div class="insight-grid" id="adminStats"></div>
+        <div class="two-col">
+          <div class="glass panel"><div class="panel-h"><h2>Coverage by Vaccine</h2></div><div class="chart-box"><canvas id="adminChart"></canvas></div></div>
+          <div class="glass panel"><div class="panel-h"><h2>Live cross-role activity</h2></div><div id="adminActivity"></div></div>
+        </div>
+        <div class="glass panel" style="margin-top:16px">
+          <div class="panel-h"><h2>Network interconnect</h2><p>Open Parent registry, Hospital clinic, or publish a camp</p></div>
+          <div class="bridge" id="adminBridge"></div>
+        </div>
+      </section>
+
+      <!-- REGISTER -->
+      <section class="view" id="view-register">
+        <div class="panel-h"><div><h2 class="hero-greeting" style="font-size:36px">Child Registration</h2><p class="hero-sub">Smart form with floating labels and OCR-ready fields.</p></div></div>
+        <div class="glass panel" style="max-width:720px">
+          <form id="childForm" class="form-grid">
+            <div class="field"><input id="cName" type="text" placeholder=" " required /><label>Full Name</label></div>
+            <div class="field"><input id="cDob" type="date" placeholder=" " required /><label>Date of Birth</label></div>
+            <div class="field"><select id="cGender" required><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select><label>Gender</label></div>
+            <div class="field"><input id="cParent" type="text" placeholder=" " required /><label>Parent / Guardian</label></div>
+            <div class="field"><input id="cPhone" type="tel" placeholder=" " /><label>Phone</label></div>
+            <div class="field"><input id="cEmail" type="email" placeholder=" " /><label>Parent Email (for reminders)</label></div>
+            <div class="field"><input id="cBlood" type="text" placeholder=" " list="bloodList" /><label>Blood Group</label>
+              <datalist id="bloodList"><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>O+</option><option>O-</option><option>AB+</option><option>AB-</option></datalist>
+            </div>
+            <div class="field full"><textarea id="cAddress" placeholder=" "></textarea><label>Address</label></div>
+            <div class="field full" style="display:flex;gap:10px;flex-wrap:wrap">
+              <button class="btn btn-primary" type="submit">Save Child</button>
+              <button class="btn btn-ghost" type="button" data-view-jump="ocr">Import via OCR</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- TIMELINE -->
+      <section class="view" id="view-timeline">
+        <div class="panel-h"><div><h2 class="hero-greeting" style="font-size:36px">Vaccination Timeline</h2><p class="hero-sub">Apple Health–style interactive schedule.</p></div>
+          <select id="timelineChild" style="border:1px solid var(--border);border-radius:14px;padding:10px 14px;background:var(--surface-solid)"></select>
+        </div>
+        <div class="glass panel"><div class="timeline" id="timelineList"></div></div>
+      </section>
+
+      <!-- CAMPS -->
+      <section class="view" id="view-camps">
+        <div class="panel-h"><div>
+          <h2 class="hero-greeting" style="font-size:36px">Vaccination Camps</h2>
+          <p class="hero-sub" id="campsSub">Discover, book, and manage nearby camps.</p>
+        </div></div>
+        <div class="two-col">
+          <div class="glass panel" id="campCreatePanel" data-role-only="hospital,admin">
+            <div class="panel-h"><h2>Create / Manage Camp</h2><span class="pill pill-info">Admin & Hospital publish · Parents book</span></div>
+            <form id="campForm" class="form-grid">
+              <div class="field"><input id="campName" placeholder=" " required /><label>Camp Name</label></div>
+              <div class="field"><input id="campDate" type="date" placeholder=" " required /><label>Date</label></div>
+              <div class="field"><input id="campLoc" placeholder=" " required /><label>Location</label></div>
+              <div class="field"><input id="campSlots" type="number" min="1" placeholder=" " value="50" /><label>Slots</label></div>
+              <div class="field full"><button class="btn btn-primary" type="submit">Publish Camp</button></div>
+            </form>
+          </div>
+          <div class="glass panel"><div class="panel-h"><h2 id="campListTitle">Upcoming Camps</h2></div><div id="campList"></div></div>
+        </div>
+      </section>
+
+      <!-- CERTIFICATE -->
+      <section class="view" id="view-certificate">
+        <div class="panel-h"><div><h2 class="hero-greeting" style="font-size:36px">Digital Certificate</h2><p class="hero-sub">Beautiful, QR-backed, PDF-ready proof of vaccination.</p></div>
+          <select id="certChild" style="border:1px solid var(--border);border-radius:14px;padding:10px 14px;background:var(--surface-solid)"></select>
+        </div>
+        <div class="glass panel">
+          <div class="cert" id="certificate">
+            <div class="cert-head">
+              <div>
+                <div class="pill pill-ok" id="certStatus">Verified</div>
+                <h3>Immunization Certificate</h3>
+                <p style="color:var(--muted);margin-top:6px">Issued by Horizon Hunters National Immunization Network</p>
+              </div>
+              <div class="brand-mark" style="width:52px;height:52px;font-size:20px">H</div>
+            </div>
+            <div class="cert-grid">
+              <div class="cert-meta" id="certMeta"></div>
+              <div id="qrBox"></div>
+            </div>
+          </div>
+          <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-primary" id="dlPdf" type="button">Download PDF</button>
+            <button class="btn btn-ghost" data-view-jump="verify" type="button">Open Verification</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- VERIFY -->
+      <section class="view" id="view-verify">
+        <div class="panel-h"><div><h2 class="hero-greeting" style="font-size:36px">QR Verification</h2><p class="hero-sub">Paste a certificate code to verify authenticity.</p></div></div>
+        <div class="glass panel" style="max-width:560px">
+          <form id="verifyForm" class="form-grid">
+            <div class="field full"><input id="verifyCode" placeholder=" " required /><label>Certificate Code</label></div>
+            <div class="field full"><button class="btn btn-primary" type="submit">Verify</button></div>
+          </form>
+          <div id="verifyResult" style="margin-top:16px"></div>
+        </div>
+      </section>
+
+      <!-- ANALYTICS -->
+      <section class="view" id="view-analytics">
+        <div class="panel-h"><div><h2 class="hero-greeting" style="font-size:36px">Analytics</h2><p class="hero-sub">Coverage, trends, camps, and hospital performance.</p></div></div>
+        <div class="three-col">
+          <div class="glass panel"><div class="panel-h"><h2>Coverage</h2></div><div class="chart-box"><canvas id="chartCoverage"></canvas></div></div>
+          <div class="glass panel"><div class="panel-h"><h2>Monthly Trends</h2></div><div class="chart-box"><canvas id="chartTrends"></canvas></div></div>
+          <div class="glass panel"><div class="panel-h"><h2>Camp Stats</h2></div><div class="chart-box"><canvas id="chartCamps"></canvas></div></div>
+        </div>
+        <div class="glass panel" style="margin-top:16px"><div class="panel-h"><h2>Hospital Performance</h2></div><div class="chart-box" style="height:320px"><canvas id="chartHosp"></canvas></div></div>
+      </section>
+
+      <!-- AEFI -->
+      <section class="view" id="view-aefi">
+        <div class="panel-h"><div><h2 class="hero-greeting" style="font-size:36px">AEFI Reporting</h2><p class="hero-sub">Adverse Events Following Immunization — report with care.</p></div></div>
+        <div class="two-col">
+          <div class="glass panel">
+            <form id="aefiForm" class="form-grid">
+              <div class="field"><select id="aefiChild" required></select><label>Child</label></div>
+              <div class="field"><select id="aefiSeverity" required><option>Mild</option><option>Moderate</option><option>Severe</option></select><label>Severity</label></div>
+              <div class="field full"><input id="aefiSymptom" placeholder=" " required /><label>Symptoms</label></div>
+              <div class="field full"><textarea id="aefiNotes" placeholder=" "></textarea><label>Notes</label></div>
+              <div class="field full"><button class="btn btn-danger" type="submit">Submit AEFI Report</button></div>
+            </form>
+          </div>
+          <div class="glass panel"><div class="panel-h"><h2>Recent Reports</h2></div><div id="aefiList"></div></div>
+        </div>
+      </section>
+
+      <!-- NOTIFICATIONS -->
+      <section class="view" id="view-notifications">
+        <div class="panel-h"><div><h2 class="hero-greeting" style="font-size:36px">Notifications</h2><p class="hero-sub">Upcoming, completed, missed, and recommendations.</p></div>
+          <button class="btn btn-ghost" id="clearNotifs" type="button">Mark all read</button>
+        </div>
+        <div class="glass panel" data-role-only="hospital,admin" style="margin-bottom:16px">
+          <div class="panel-h"><h2>Send Reminder to Parents</h2><span class="pill pill-info">Due now or within 7 days</span></div>
+          <p class="card-meta" style="margin-bottom:10px">Pick a child to send a dose-due reminder. In-app saves instantly to that parent's notifications; Email and WhatsApp open a pre-filled message you send yourself from your own account.</p>
+          <div id="reminderList"></div>
+        </div>
+        <div class="glass panel"><div class="notif-list" id="notifList"></div></div>
+      </section>
+
+      <!-- OCR -->
+      <section class="view" id="view-ocr">
+        <div class="panel-h"><div><h2 class="hero-greeting" style="font-size:36px">OCR Import</h2><p class="hero-sub">Upload a vaccination card or birth certificate — Tesseract extracts fields.</p></div></div>
+        <div class="glass panel" style="max-width:720px">
+          <input type="file" id="ocrFile" accept="image/*" style="margin-bottom:14px" />
+          <div id="ocrStatus" class="card-meta" style="margin-bottom:12px">Waiting for image…</div>
+          <div class="ocr-preview" id="ocrText"></div>
+          <div style="margin-top:14px"><button class="btn btn-primary" id="ocrApply" type="button" disabled>Apply to Registration</button></div>
+        </div>
+      </section>
+
+      <!-- MAP -->
+      <section class="view" id="view-map">
+        <div class="panel-h"><div><h2 class="hero-greeting" style="font-size:36px">Camp Map</h2><p class="hero-sub">Nearby vaccination camps on OpenStreetMap.</p></div></div>
+        <div class="glass panel"><div id="leafletMap" class="map"></div><div id="mapDistances" style="margin-top:14px"></div></div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<button class="fab" id="aiFab" type="button" title="Ask Horizon Hunters">✦</button>
+<aside class="ai-panel" id="aiPanel">
+  <div class="ai-head">
+    <div class="brand-mark" style="width:36px;height:36px;font-size:14px;box-shadow:none">AI</div>
+    <div style="flex:1"><h3>Horizon Hunters Assistant</h3><p>Ask schedules, navigate, search children</p></div>
+    <button class="icon-btn" id="aiClose" type="button" style="background:rgba(255,255,255,.2);border:0;color:#fff">✕</button>
+  </div>
+  <div class="ai-body" id="aiBody"></div>
+  <div class="ai-foot">
+    <input id="aiInput" placeholder="Ask about MMR, schedules, camps…" />
+    <button class="btn btn-primary" id="aiSend" type="button">Send</button>
+  </div>
+</aside>
+
+<div class="overlay" id="cmdOverlay">
+  <div class="cmd">
+    <input id="cmdInput" placeholder="Type a command… Register child, dark mode, explain MMR…" />
+    <div class="cmd-list" id="cmdList"></div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+(() => {
+  const STORAGE_KEY = 'vaxai_v1';
+  const CIRC = 2 * Math.PI * 38;
+
+  const SCHEDULE = [
+    { id: 'bcg', name: 'BCG', ageDays: 0, group: 'Birth' },
+    { id: 'opv0', name: 'OPV-0', ageDays: 0, group: 'Birth' },
+    { id: 'hepb0', name: 'HepB-0', ageDays: 0, group: 'Birth' },
+    { id: 'opv1', name: 'OPV-1', ageDays: 42, group: '6 weeks' },
+    { id: 'penta1', name: 'Pentavalent-1', ageDays: 42, group: '6 weeks' },
+    { id: 'rota1', name: 'Rotavirus-1', ageDays: 42, group: '6 weeks' },
+    { id: 'pcv1', name: 'PCV-1', ageDays: 42, group: '6 weeks' },
+    { id: 'opv2', name: 'OPV-2', ageDays: 70, group: '10 weeks' },
+    { id: 'penta2', name: 'Pentavalent-2', ageDays: 70, group: '10 weeks' },
+    { id: 'rota2', name: 'Rotavirus-2', ageDays: 70, group: '10 weeks' },
+    { id: 'opv3', name: 'OPV-3', ageDays: 98, group: '14 weeks' },
+    { id: 'penta3', name: 'Pentavalent-3', ageDays: 98, group: '14 weeks' },
+    { id: 'ipv1', name: 'IPV-1', ageDays: 98, group: '14 weeks' },
+    { id: 'mr1', name: 'MR-1 / MMR', ageDays: 270, group: '9 months' },
+    { id: 'je1', name: 'JE-1', ageDays: 270, group: '9 months' },
+    { id: 'mr2', name: 'MR-2 / MMR booster', ageDays: 480, group: '16–24 months' },
+    { id: 'dptb', name: 'DPT booster', ageDays: 480, group: '16–24 months' },
+    { id: 'opvb', name: 'OPV booster', ageDays: 480, group: '16–24 months' }
+  ];
+
+  const TIPS = [
+    'Drink plenty of water after vaccination.',
+    'A mild fever for 24–48 hours can be normal — rest helps.',
+    'Keep the injection site clean and dry.',
+    'Breastfeed or offer comfort foods after the visit.',
+    'Bring your vaccination card to every appointment.',
+    'Schedule the next dose before leaving the clinic.'
+  ];
+
+  const LANG_ORDER = ['en', 'hi', 'ta'];
+  const LANG_LABEL = { en: 'EN', hi: 'हिं', ta: 'தமிழ்' };
+  const LANG_NAME = { en: 'English', hi: 'हिंदी', ta: 'தமிழ்' };
+
+  const I18N = {
+    en: {
+      tagline: 'Child Vaccination Intelligence',
+      nav_workspace: 'Workspace', nav_family: 'Family Home', nav_clinic: 'Clinic Home', nav_network: 'Network Home',
+      nav_registry: 'Children Registry', nav_care: 'Care', nav_register: 'Register Child',
+      nav_timeline: 'Timeline', nav_camps: 'Camps', nav_cert: 'Certificate', nav_verify: 'QR Verify',
+      nav_ops: 'Operations', nav_analytics: 'Analytics', nav_aefi: 'AEFI Report', nav_notif: 'Notifications',
+      nav_ocr: 'OCR Import', nav_map: 'Camp Map', search_ph: 'Search children, camps, hospitals…',
+      cta_register: 'Register', chip_theme: '◐ Theme', chip_voice: '🎙 Voice', chip_role: '⇄ Role',
+      home_sub: 'Your family\'s protection, predicted and guided by Horizon Hunters — schedules, camps, and certificates in one calm place.',
+      protection: 'Protection Score', next_vax: 'Next Vaccine', nearby: 'Nearby Camp', risk: 'Risk Level',
+      today_rec: "Today's Recommendation", suggested: 'Suggested Actions', gamify: 'Protection Journey',
+      streak_hint: 'Streaks & achievements', completion: 'Vaccination Completion', missed: 'Missed Vaccines',
+      upcoming: 'Upcoming', parent_dash: 'Children Registry', parent_sub: 'Your children, upcoming doses, and health insights. Hospital dose logs appear here automatically.',
+      your_children: 'Your Children', hosp_dash: 'Clinic Home',
+      role_parent: 'Parent workspace', role_hospital: 'Hospital workspace', role_admin: 'Admin workspace',
+      gate_title: 'Who’s using Horizon Hunters today?', gate_sub: 'Each role opens a different landing workspace. Parent, Hospital, and Admin share the same live data.'
+    },
+    hi: {
+      tagline: 'बाल टीकाकरण बुद्धिमत्ता',
+      nav_workspace: 'कार्यक्षेत्र', nav_family: 'पारिवारिक होम', nav_clinic: 'क्लिनिक होम', nav_network: 'नेटवर्क होम',
+      nav_registry: 'बच्चों का रजिस्ट्री', nav_care: 'देखभाल', nav_register: 'बच्चा पंजीकृत करें',
+      nav_timeline: 'समयरेखा', nav_camps: 'शिविर', nav_cert: 'प्रमाणपत्र', nav_verify: 'QR सत्यापन',
+      nav_ops: 'संचालन', nav_analytics: 'विश्लेषण', nav_aefi: 'AEFI रिपोर्ट', nav_notif: 'सूचनाएँ',
+      nav_ocr: 'OCR आयात', nav_map: 'शिविर मानचित्र', search_ph: 'बच्चे, शिविर, अस्पताल खोजें…',
+      cta_register: 'पंजीकरण', chip_theme: '◐ थीम', chip_voice: '🎙 आवाज़', chip_role: '⇄ भूमिका',
+      home_sub: 'Horizon Hunters के साथ परिवार की सुरक्षा — शेड्यूल, शिविर और प्रमाणपत्र एक स्थान पर।',
+      protection: 'सुरक्षा स्कोर', next_vax: 'अगला टीका', nearby: 'नज़दीकी शिविर', risk: 'जोखिम स्तर',
+      today_rec: 'आज की सलाह', suggested: 'सुझाए गए कार्य', gamify: 'सुरक्षा यात्रा',
+      streak_hint: 'स्ट्रीक और उपलब्धियाँ', completion: 'टीकाकरण पूर्णता', missed: 'छूटे टीके',
+      upcoming: 'आगामी', parent_dash: 'बच्चों का रजिस्ट्री', parent_sub: 'आपके बच्चे, आगामी खुराक और स्वास्थ्य जानकारी। अस्पताल के लॉग यहाँ दिखते हैं।',
+      your_children: 'आपके बच्चे', hosp_dash: 'क्लिनिक होम',
+      role_parent: 'अभिभावक कार्यक्षेत्र', role_hospital: 'अस्पताल कार्यक्षेत्र', role_admin: 'एडमिन कार्यक्षेत्र',
+      gate_title: 'आज Horizon Hunters कौन इस्तेमाल कर रहा है?', gate_sub: 'हर भूमिका अलग लैंडिंग खोलती है। अभिभावक, अस्पताल और एडमिन एक ही डेटा साझा करते हैं।'
+    },
+    ta: {
+      tagline: 'குழந்தை தடுப்பூசி நுண்ணறிவு',
+      nav_workspace: 'பணியிடம்', nav_family: 'குடும்ப முகப்பு', nav_clinic: 'கிளினிக் முகப்பு', nav_network: 'வலைத்தள முகப்பு',
+      nav_registry: 'குழந்தை பதிவேடு', nav_care: 'பராமரிப்பு', nav_register: 'குழந்தையை பதிவு செய்',
+      nav_timeline: 'காலவரிசை', nav_camps: 'முகாம்கள்', nav_cert: 'சான்றிதழ்', nav_verify: 'QR சரிபார்ப்பு',
+      nav_ops: 'செயல்பாடுகள்', nav_analytics: 'பகுப்பாய்வு', nav_aefi: 'AEFI அறிக்கை', nav_notif: 'அறிவிப்புகள்',
+      nav_ocr: 'OCR இறக்குமதி', nav_map: 'முகாம் வரைபடம்', search_ph: 'குழந்தைகள், முகாம்கள், மருத்துவமனைகள்…',
+      cta_register: 'பதிவு', chip_theme: '◐ தீம்', chip_voice: '🎙 குரல்', chip_role: '⇄ பங்கு',
+      home_sub: 'Horizon Hunters உடன் குடும்ப பாதுகாப்பு — அட்டவணை, முகாம்கள் மற்றும் சான்றிதழ்கள் ஒரே இடத்தில்.',
+      protection: 'பாதுகாப்பு மதிப்பெண்', next_vax: 'அடுத்த தடுப்பூசி', nearby: 'அருகிலுள்ள முகாம்', risk: 'ஆபத்து நிலை',
+      today_rec: 'இன்றைய பரிந்துரை', suggested: 'பரிந்துரைக்கப்பட்ட செயல்கள்', gamify: 'பாதுகாப்பு பயணம்',
+      streak_hint: 'தொடர்கள் & சாதனைகள்', completion: 'தடுப்பூசி நிறைவு', missed: 'தவறிய தடுப்பூசிகள்',
+      upcoming: 'வரவிருக்கும்', parent_dash: 'குழந்தை பதிவேடு', parent_sub: 'உங்கள் குழந்தைகள், வரவிருக்கும் டோஸ்கள் மற்றும் சுகாதார தகவல்கள். மருத்துவமனை பதிவுகள் இங்கே தோன்றும்.',
+      your_children: 'உங்கள் குழந்தைகள்', hosp_dash: 'கிளினிக் முகப்பு',
+      role_parent: 'பெற்றோர் பணியிடம்', role_hospital: 'மருத்துவமனை பணியிடம்', role_admin: 'நிர்வாக பணியிடம்',
+      gate_title: 'இன்று Horizon Hunters-ஐ யார் பயன்படுத்துகிறீர்கள்?', gate_sub: 'ஒவ்வொரு பங்கும் வேறு முகப்பைத் திறக்கும். பெற்றோர், மருத்துவமனை, நிர்வாகம் ஒரே தரவைப் பகிர்கின்றன.'
+    }
+  };
+
+  const KB = [
+    { keys: ['mmr', 'mr', 'measles', 'mumps', 'rubella'], reply: 'MMR (or MR) protects against measles, mumps, and rubella. First dose is typically around 9 months; a booster follows at 16–24 months. Mild fever or rash can occur — serious reactions are rare.' },
+    { keys: ['bcg', 'tb', 'tuberculosis'], reply: 'BCG is given at birth to protect against severe forms of tuberculosis. A small scar at the injection site is common and expected.' },
+    { keys: ['schedule', 'timeline', 'when', 'due'], reply: 'India\'s UIP schedule covers birth, 6/10/14 weeks, 9 months, and 16–24 months. Open Timeline for a personalized view, or ask me about a specific vaccine.' },
+    { keys: ['fever', 'side effect', 'aefi', 'pain'], reply: 'Mild fever, fussiness, or soreness for 1–2 days is common. Seek care for high fever, seizures, difficulty breathing, or symptoms lasting beyond 48 hours — and file an AEFI report in the app.' },
+    { keys: ['camp', 'nearby', 'book'], reply: 'Nearby camps appear on Home and Camp Map. You can book from Camps, or say “book camp” in the command bar (Ctrl+K).' },
+    { keys: ['certificate', 'pdf', 'qr'], reply: 'Digital certificates include a QR code for verification. Open Certificate, choose a child, then Download PDF — or Verify with the certificate code.' },
+    { keys: ['register', 'add child', 'new child'], reply: 'I can take you to registration. Tip: use OCR Import to scan a birth certificate or vaccination card and auto-fill the form.' },
+    { keys: ['opv', 'polio'], reply: 'Oral Polio Vaccine (OPV) is given at birth and at 6, 10, and 14 weeks, plus a booster. IPV is also given at 14 weeks for stronger protection.' },
+    { keys: ['pcv', 'pneumonia'], reply: 'PCV helps prevent pneumococcal disease including pneumonia and meningitis. It is usually given starting at 6 weeks.' },
+    { keys: ['hello', 'hi', 'hey'], reply: 'Hello! I\'m Horizon Hunters — ask about vaccines, find a child, open any page, or press Ctrl+K for the command palette.' },
+    { keys: ['help', 'what can'], reply: 'Try: “explain MMR”, “next vaccine”, “search Aarav”, “open analytics”, “dark mode”, or “register child”. Voice commands work if you enable Voice in the sidebar.' }
+  ];
+
+  let state = loadState();
+  let lang = localStorage.getItem('vaxai_lang') || 'en';
+  let currentRole = localStorage.getItem('vaxai_role') || null;
+  let loggedInPhone = localStorage.getItem('vaxai_parent_phone') || null;
+  let loggedInHospitalId = localStorage.getItem('vaxai_hospital_id') || null;
+  let pendingRole = null;
+  let authMode = 'signin';   // 'signin' | 'signup'
+  let otpStage = 'idle';     // 'idle' | 'sent'
+  let pendingOtp = null;
+  let otpTarget = null;      // phone the OTP was sent to
+  let pendingSignup = null;  // holds signup form data while OTP is pending
+  let charts = {};
+  let map, mapReady = false;
+  let cmdIndex = 0;
+  let ocrExtract = null;
+  let voiceOn = false;
+  let recognition = null;
+
+  const ROLE_META = {
+    parent: { label: 'Parent workspace', icon: '◉', home: 'home', cta: { view: 'register', text: 'Register' } },
+    hospital: { label: 'Hospital workspace', icon: '✚', home: 'hospital', cta: { view: 'verify', text: 'QR Desk' } },
+    admin: { label: 'Admin workspace', icon: '◎', home: 'admin', cta: { view: 'camps', text: 'Publish Camp' } }
+  };
+
+  function visibleChildren() {
+    if (currentRole === 'parent' && loggedInPhone) {
+      return state.children.filter(c => c.phone === loggedInPhone);
+    }
+    return state.children;
+  }
+
+  function uid() { return 'id_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
+  function today() { return new Date().toISOString().slice(0, 10); }
+  function daysBetween(a, b) { return Math.round((new Date(b) - new Date(a)) / 86400000); }
+  function ageDays(dob) { return daysBetween(dob, today()); }
+  function addDays(dob, n) { const d = new Date(dob); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); }
+
+  function defaultState() {
+    const children = [
+      { id: 'c1', name: 'Aarav Sharma', dob: '2024-08-12', gender: 'Male', parent: 'Neha Sharma', phone: '9876543210', email: 'neha.sharma@example.com', blood: 'B+', address: 'Koramangala, Bengaluru', doses: { bcg: '2024-08-13', opv0: '2024-08-13', hepb0: '2024-08-13', opv1: '2024-09-24', penta1: '2024-09-24', rota1: '2024-09-24', pcv1: '2024-09-24', opv2: '2024-10-22', penta2: '2024-10-22' }, lastHospital: 'City Care Children\'s Hospital', lastDoseAt: '2024-10-22', createdAt: '2024-08-12' },
+      { id: 'c2', name: 'Ananya Patel', dob: '2023-11-03', gender: 'Female', parent: 'Ravi Patel', phone: '9123456780', email: 'ravi.patel@example.com', blood: 'O+', address: 'Andheri, Mumbai', doses: { bcg: '2023-11-04', opv0: '2023-11-04', hepb0: '2023-11-04', opv1: '2023-12-15', penta1: '2023-12-15', rota1: '2023-12-15', pcv1: '2023-12-15', opv2: '2024-01-12', penta2: '2024-01-12', rota2: '2024-01-12', opv3: '2024-02-09', penta3: '2024-02-09', ipv1: '2024-02-09', mr1: '2024-08-05' }, lastHospital: 'Lotus Mother & Child', lastDoseAt: '2024-08-05', createdAt: '2023-11-03' },
+      { id: 'c3', name: 'Vihaan Reddy', dob: '2025-01-20', gender: 'Male', parent: 'Sneha Reddy', phone: '9988776655', email: 'sneha.reddy@example.com', blood: 'A+', address: 'Hitech City, Hyderabad', doses: { bcg: '2025-01-21', opv0: '2025-01-21', hepb0: '2025-01-21' }, lastHospital: 'Arogya Pediatric Center', lastDoseAt: '2025-01-21', createdAt: '2025-01-20' }
+    ];
+    const hospitals = [
+      { id: 'h1', name: 'City Care Children\'s Hospital', city: 'Bengaluru', dosesLogged: 1284, rating: 4.8 },
+      { id: 'h2', name: 'Lotus Mother & Child', city: 'Mumbai', dosesLogged: 980, rating: 4.6 },
+      { id: 'h3', name: 'Arogya Pediatric Center', city: 'Hyderabad', dosesLogged: 742, rating: 4.7 }
+    ];
+    const camps = [
+      { id: 'cp1', name: 'Koramangala Weekend Drive', date: addDays(today(), 5), location: 'Koramangala BBMP Hall', lat: 12.9352, lng: 77.6245, slots: 80, booked: 42, publishedBy: 'admin' },
+      { id: 'cp2', name: 'Andheri Community Camp', date: addDays(today(), 9), location: 'Andheri Sports Complex', lat: 19.1197, lng: 72.8468, slots: 120, booked: 67, publishedBy: 'hospital' },
+      { id: 'cp3', name: 'Hitech City Immunization Day', date: addDays(today(), 14), location: 'Cyber Towers Plaza', lat: 17.4483, lng: 78.3915, slots: 100, booked: 31, publishedBy: 'admin' }
+    ];
+    const notifications = [
+      { id: 'n1', type: 'upcoming', title: 'MMR due soon', body: 'Ananya Patel — MR-2 in ~3 weeks.', read: false, at: today(), audience: 'parent' },
+      { id: 'n2', type: 'recommendation', title: 'Hydration tip', body: TIPS[0], read: false, at: today(), audience: 'parent' },
+      { id: 'n3', type: 'completed', title: 'Dose recorded at hospital', body: 'Aarav Sharma — Pentavalent-2 completed at City Care.', read: true, at: today(), audience: 'all' },
+      { id: 'n4', type: 'missed', title: 'Follow-up needed', body: 'Vihaan Reddy — 6-week doses approaching window.', read: false, at: today(), audience: 'hospital' },
+      { id: 'n5', type: 'recommendation', title: 'Coverage watch', body: 'Network protection average updated from hospital logs.', read: false, at: today(), audience: 'admin' }
+    ];
+    // Demo credential directory. In a production deployment these would live
+    // behind a real authentication backend with hashed passwords, not
+    // plaintext in client-side storage.
+    const parentAccounts = children.map(c => ({ phone: c.phone, name: c.parent, email: c.email || '' }));
+    const hospitalAccounts = [
+      { id: 'h1', username: 'citycare', password: 'City@2026', hospitalId: 'h1' },
+      { id: 'h2', username: 'lotus', password: 'Lotus@2026', hospitalId: 'h2' },
+      { id: 'h3', username: 'arogya', password: 'Arogya@2026', hospitalId: 'h3' }
+    ];
+    const adminAccounts = [
+      { username: 'VENKATESH', password: 'VENKAT@2007' }
+    ];
+    return {
+      children, hospitals, camps, notifications,
+      parentAccounts, hospitalAccounts, adminAccounts,
+      aefi: [],
+      doseLog: [],
+      streak: 3,
+      achievements: ['first_child', 'on_time'],
+      userLat: 12.9716, userLng: 77.5946
+    };
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) { const s = defaultState(); localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); return s; }
+      return { ...defaultState(), ...JSON.parse(raw) };
+    } catch { return defaultState(); }
+  }
+  function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+  function toast(msg) {
+    const el = document.createElement('div');
+    el.className = 'toast'; el.textContent = msg;
+    document.getElementById('toasts').appendChild(el);
+    setTimeout(() => el.remove(), 2800);
+  }
+
+  function speak(text) {
+    if (!voiceOn || !window.speechSynthesis) return;
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 1; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+  }
+
+  function childSchedule(child) {
+    const age = ageDays(child.dob);
+    return SCHEDULE.map(v => {
+      const due = addDays(child.dob, v.ageDays);
+      const done = !!child.doses[v.id];
+      let status = 'upcoming';
+      if (done) status = 'done';
+      else if (age >= v.ageDays + 21) status = 'missed';
+      else if (age >= v.ageDays - 7 && age <= v.ageDays + 14) status = 'current';
+      return { ...v, due, done, status, given: child.doses[v.id] || null };
+    });
+  }
+
+  function protectionScore(child) {
+    const sch = childSchedule(child);
+    const relevant = sch.filter(v => ageDays(child.dob) >= v.ageDays - 7);
+    if (!relevant.length) return 100;
+    const done = relevant.filter(v => v.done).length;
+    return Math.round((done / relevant.length) * 100);
+  }
+
+  function riskLevel(score) {
+    if (score >= 90) return { label: 'Low', pill: 'pill-ok' };
+    if (score >= 70) return { label: 'Moderate', pill: 'pill-warn' };
+    return { label: 'High', pill: 'pill-danger' };
+  }
+
+  function nextVaccine(child) {
+    return childSchedule(child).find(v => !v.done);
+  }
+
+  function avgProtection(list) {
+    const arr = list || state.children;
+    if (!arr.length) return 0;
+    return Math.round(arr.reduce((s, c) => s + protectionScore(c), 0) / arr.length);
+  }
+
+  function haversine(lat1, lon1, lat2, lon2) {
+    const R = 6371, toRad = d => d * Math.PI / 180;
+    const dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  function nearestCamp() {
+    let best = null, bestD = Infinity;
+    state.camps.forEach(c => {
+      const d = haversine(state.userLat, state.userLng, c.lat, c.lng);
+      if (d < bestD) { bestD = d; best = { ...c, dist: d }; }
+    });
+    return best;
+  }
+
+  function certCode(child) {
+    return 'VAX-' + child.id.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6) + '-' + child.dob.replace(/-/g,'').slice(2);
+  }
+
+  function setRing(el, score, light) {
+    const prog = el.querySelector('.prog') || el;
+    const offset = CIRC - (score / 100) * CIRC;
+    prog.style.strokeDasharray = CIRC;
+    prog.style.strokeDashoffset = offset;
+    if (!light) prog.style.stroke = 'url(#)';
+  }
+
+  function greetingText() {
+    const h = new Date().getHours();
+    const base = h < 12 ? 'Good Morning' : h < 17 ? 'Good Afternoon' : 'Good Evening';
+    return base + ' 👋';
+  }
+
+  function applyI18n() {
+    const dict = I18N[lang] || I18N.en;
+    document.documentElement.setAttribute('lang', lang === 'hi' ? 'hi' : lang === 'ta' ? 'ta' : 'en');
+    document.documentElement.setAttribute('data-lang', lang);
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const k = el.getAttribute('data-i18n');
+      if (dict[k]) el.textContent = dict[k];
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const k = el.getAttribute('data-i18n-placeholder');
+      if (dict[k]) el.placeholder = dict[k];
+    });
+    const langBtn = document.getElementById('langToggle');
+    if (langBtn) {
+      langBtn.textContent = LANG_LABEL[lang] || 'EN';
+      langBtn.title = 'Language: ' + (LANG_NAME[lang] || 'English') + ' · click to switch EN → हिं → தமிழ்';
+    }
+    // Refresh role badge text in current language
+    if (currentRole && ROLE_META[currentRole]) {
+      const key = 'role_' + currentRole;
+      const badge = document.getElementById('roleBadge');
+      if (badge) badge.textContent = ROLE_META[currentRole].icon + ' ' + (dict[key] || ROLE_META[currentRole].label);
+    }
+  }
+
+  function toggleLang() {
+    const idx = LANG_ORDER.indexOf(lang);
+    lang = LANG_ORDER[(idx + 1) % LANG_ORDER.length];
+    localStorage.setItem('vaxai_lang', lang);
+    applyI18n();
+    if (recognition) {
+      recognition.lang = lang === 'ta' ? 'ta-IN' : lang === 'hi' ? 'hi-IN' : 'en-IN';
+    }
+    toast(LANG_NAME[lang] || lang);
+  }
+
+  function roleHome(role) {
+    return (ROLE_META[role] || ROLE_META.parent).home;
+  }
+
+  function showRoleGate(show) {
+    document.getElementById('roleGate').classList.toggle('open', !!show);
+    if (show) showRoleChoose();
+  }
+
+  function showRoleChoose() {
+    pendingRole = null;
+    document.getElementById('roleGateChoose').style.display = '';
+    document.getElementById('roleGateLogin').style.display = 'none';
+    resetAuthState();
+  }
+
+  function resetAuthState() {
+    authMode = 'signin';
+    otpStage = 'idle';
+    pendingOtp = null;
+    otpTarget = null;
+    pendingSignup = null;
+    const err = document.getElementById('loginError');
+    if (err) err.textContent = '';
+    const form = document.getElementById('loginForm');
+    if (form) form.reset();
+  }
+
+  function showLoginForm(role) {
+    pendingRole = role;
+    resetAuthState();
+    document.getElementById('roleGateChoose').style.display = 'none';
+    document.getElementById('roleGateLogin').style.display = '';
+    setAuthTab('signin');
+  }
+
+  function setAuthTab(mode) {
+    authMode = mode;
+    otpStage = 'idle';
+    pendingOtp = null;
+    otpTarget = null;
+    pendingSignup = null;
+    document.getElementById('loginError').textContent = '';
+    document.getElementById('tabSignin').classList.toggle('on', mode === 'signin');
+    document.getElementById('tabSignup').classList.toggle('on', mode === 'signup');
+    renderAuthFields();
+  }
+
+  function generateOtp() { return String(Math.floor(100000 + Math.random() * 900000)); }
+
+  function otpHintHtml() {
+    // Simulated SMS/email delivery — this app has no backend or SMS/email
+    // gateway, so the "sent" OTP is shown right here instead of texted out.
+    return `<div class="field full" style="background:var(--accent-soft);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.5">
+      <strong>Demo mode:</strong> no SMS gateway is connected, so your one-time code is shown here instead of being texted.<br>
+      Your OTP is <strong style="font-size:16px;letter-spacing:.08em">${pendingOtp}</strong> — valid for this sign-in only.
+    </div>`;
+  }
+
+  function renderAuthFields() {
+    const titleEl = document.getElementById('loginTitle');
+    const subEl = document.getElementById('loginSub');
+    const fields = document.getElementById('loginFields');
+    const submitBtn = document.getElementById('loginSubmitBtn');
+    const role = pendingRole;
+    const icon = role === 'parent' ? '◉' : role === 'hospital' ? '✚' : '◎';
+
+    if (role === 'parent' && authMode === 'signin') {
+      titleEl.textContent = icon + ' Parent sign in';
+      if (otpStage === 'idle') {
+        subEl.textContent = 'Enter the phone number your child was registered with — we\'ll send a one-time code to verify it\'s you.';
+        fields.innerHTML = `<div class="field full"><input id="loginPhone" type="tel" placeholder=" " autocomplete="off" required /><label>Registered Phone Number</label></div>`;
+        submitBtn.textContent = 'Send OTP';
+      } else {
+        subEl.textContent = 'Enter the 6-digit code to finish signing in.';
+        fields.innerHTML = `<div class="field full"><input value="${otpTarget}" disabled /><label>Phone Number</label></div>
+          <div class="field full"><input id="loginOtp" type="text" inputmode="numeric" maxlength="6" placeholder=" " autocomplete="off" required /><label>Enter OTP</label></div>
+          ${otpHintHtml()}
+          <button type="button" class="btn btn-ghost" id="otpChangeNum" style="grid-column:1/-1;justify-self:start">← Use a different number</button>`;
+        submitBtn.textContent = 'Verify & Sign In';
+        const changeBtn = document.getElementById('otpChangeNum');
+        if (changeBtn) changeBtn.onclick = () => { otpStage = 'idle'; pendingOtp = null; renderAuthFields(); };
+      }
+    } else if (role === 'parent' && authMode === 'signup') {
+      titleEl.textContent = icon + ' Parent · New User Sign Up';
+      if (otpStage === 'idle') {
+        subEl.textContent = 'Create your family account. We\'ll verify your number with an OTP before creating it.';
+        fields.innerHTML = `<div class="field full"><input id="suName" type="text" placeholder=" " autocomplete="off" required /><label>Your Full Name</label></div>
+          <div class="field full"><input id="suPhone" type="tel" placeholder=" " autocomplete="off" required /><label>Phone Number</label></div>
+          <div class="field full"><input id="suEmail" type="email" placeholder=" " autocomplete="off" /><label>Email (optional, for reminders)</label></div>`;
+        submitBtn.textContent = 'Send OTP';
+      } else {
+        subEl.textContent = 'Enter the 6-digit code to confirm your number and create your account.';
+        fields.innerHTML = `<div class="field full"><input value="${otpTarget}" disabled /><label>Phone Number</label></div>
+          <div class="field full"><input id="loginOtp" type="text" inputmode="numeric" maxlength="6" placeholder=" " autocomplete="off" required /><label>Enter OTP</label></div>
+          ${otpHintHtml()}
+          <button type="button" class="btn btn-ghost" id="otpChangeNum" style="grid-column:1/-1;justify-self:start">← Edit my details</button>`;
+        submitBtn.textContent = 'Verify & Create Account';
+        const changeBtn = document.getElementById('otpChangeNum');
+        if (changeBtn) changeBtn.onclick = () => { otpStage = 'idle'; pendingOtp = null; renderAuthFields(); };
+      }
+    } else if (role === 'hospital' && authMode === 'signin') {
+      titleEl.textContent = icon + ' Hospital sign in';
+      subEl.textContent = 'Enter your hospital username and password.';
+      fields.innerHTML = `<div class="field full"><input id="loginUser" type="text" placeholder=" " autocomplete="off" required /><label>Hospital Username</label></div>
+        <div class="field full"><input id="loginPass" type="password" placeholder=" " autocomplete="off" required /><label>Password</label></div>`;
+      submitBtn.textContent = 'Sign In';
+    } else if (role === 'hospital' && authMode === 'signup') {
+      titleEl.textContent = icon + ' Hospital · New Facility Sign Up';
+      subEl.textContent = 'Register your hospital or clinic and set up its login.';
+      fields.innerHTML = `<div class="field full"><input id="suHospName" type="text" placeholder=" " autocomplete="off" required /><label>Hospital / Clinic Name</label></div>
+        <div class="field full"><input id="suHospCity" type="text" placeholder=" " autocomplete="off" required /><label>City</label></div>
+        <div class="field full"><input id="suUser" type="text" placeholder=" " autocomplete="off" required /><label>Choose a Username</label></div>
+        <div class="field full"><input id="suPass" type="password" placeholder=" " autocomplete="off" required /><label>Choose a Password</label></div>
+        <div class="field full"><input id="suPass2" type="password" placeholder=" " autocomplete="off" required /><label>Confirm Password</label></div>`;
+      submitBtn.textContent = 'Create Hospital Account';
+    } else if (role === 'admin' && authMode === 'signin') {
+      titleEl.textContent = icon + ' Admin sign in';
+      subEl.textContent = 'Enter your admin username and password.';
+      fields.innerHTML = `<div class="field full"><input id="loginUser" type="text" placeholder=" " autocomplete="off" required /><label>Admin Username</label></div>
+        <div class="field full"><input id="loginPass" type="password" placeholder=" " autocomplete="off" required /><label>Password</label></div>`;
+      submitBtn.textContent = 'Sign In';
+    } else if (role === 'admin' && authMode === 'signup') {
+      titleEl.textContent = icon + ' Admin · New User Sign Up';
+      subEl.textContent = 'Create a new network admin login.';
+      fields.innerHTML = `<div class="field full"><input id="suUser" type="text" placeholder=" " autocomplete="off" required /><label>Choose a Username</label></div>
+        <div class="field full"><input id="suPass" type="password" placeholder=" " autocomplete="off" required /><label>Choose a Password</label></div>
+        <div class="field full"><input id="suPass2" type="password" placeholder=" " autocomplete="off" required /><label>Confirm Password</label></div>`;
+      submitBtn.textContent = 'Create Admin Account';
+    }
+    document.getElementById('loginError').textContent = '';
+    setTimeout(() => { const f = fields.querySelector('input:not([disabled])'); if (f) f.focus(); }, 30);
+  }
+
+  function attemptLogin(e) {
+    e.preventDefault();
+    const err = document.getElementById('loginError');
+    err.textContent = '';
+
+    // ---- PARENT ----
+    if (pendingRole === 'parent' && authMode === 'signin') {
+      if (otpStage === 'idle') {
+        const phone = (document.getElementById('loginPhone').value || '').trim();
+        if (!/^\d{7,15}$/.test(phone)) { err.textContent = 'Enter a valid phone number (digits only).'; return; }
+        const account = state.parentAccounts.find(a => a.phone === phone);
+        if (!account) { err.textContent = 'No account found for this number. Use "New User? Sign Up" to create one.'; return; }
+        pendingOtp = generateOtp(); otpTarget = phone; otpStage = 'sent';
+        toast('OTP sent (demo mode — shown on screen)');
+        renderAuthFields();
+      } else {
+        const code = (document.getElementById('loginOtp').value || '').trim();
+        if (code !== pendingOtp) { err.textContent = 'Incorrect OTP. Please try again.'; return; }
+        loggedInPhone = otpTarget; loggedInHospitalId = null;
+        localStorage.setItem('vaxai_parent_phone', otpTarget);
+        localStorage.removeItem('vaxai_hospital_id');
+        setRole('parent');
+      }
+      return;
+    }
+
+    if (pendingRole === 'parent' && authMode === 'signup') {
+      if (otpStage === 'idle') {
+        const name = (document.getElementById('suName').value || '').trim();
+        const phone = (document.getElementById('suPhone').value || '').trim();
+        const email = (document.getElementById('suEmail').value || '').trim();
+        if (!name) { err.textContent = 'Enter your full name.'; return; }
+        if (!/^\d{7,15}$/.test(phone)) { err.textContent = 'Enter a valid phone number (digits only).'; return; }
+        if (state.parentAccounts.find(a => a.phone === phone)) { err.textContent = 'An account already exists for this number — use Sign In instead.'; return; }
+        pendingSignup = { name, phone, email };
+        pendingOtp = generateOtp(); otpTarget = phone; otpStage = 'sent';
+        toast('OTP sent (demo mode — shown on screen)');
+        renderAuthFields();
+      } else {
+        const code = (document.getElementById('loginOtp').value || '').trim();
+        if (code !== pendingOtp) { err.textContent = 'Incorrect OTP. Please try again.'; return; }
+        state.parentAccounts.push({ phone: pendingSignup.phone, name: pendingSignup.name, email: pendingSignup.email });
+        save();
+        loggedInPhone = pendingSignup.phone; loggedInHospitalId = null;
+        localStorage.setItem('vaxai_parent_phone', pendingSignup.phone);
+        localStorage.removeItem('vaxai_hospital_id');
+        toast('Welcome, ' + pendingSignup.name + '! Account created.');
+        setRole('parent');
+        go('register');
+      }
+      return;
+    }
+
+    // ---- HOSPITAL ----
+    if (pendingRole === 'hospital' && authMode === 'signin') {
+      const user = (document.getElementById('loginUser').value || '').trim().toLowerCase();
+      const pass = document.getElementById('loginPass').value || '';
+      const account = state.hospitalAccounts.find(a => a.username.toLowerCase() === user && a.password === pass);
+      if (!account) { err.textContent = 'Incorrect hospital username or password.'; return; }
+      loggedInHospitalId = account.hospitalId; loggedInPhone = null;
+      localStorage.setItem('vaxai_hospital_id', account.hospitalId);
+      localStorage.removeItem('vaxai_parent_phone');
+      setRole('hospital');
+      return;
+    }
+
+    if (pendingRole === 'hospital' && authMode === 'signup') {
+      const name = (document.getElementById('suHospName').value || '').trim();
+      const city = (document.getElementById('suHospCity').value || '').trim();
+      const user = (document.getElementById('suUser').value || '').trim();
+      const pass = document.getElementById('suPass').value || '';
+      const pass2 = document.getElementById('suPass2').value || '';
+      if (!name || !city) { err.textContent = 'Enter the hospital name and city.'; return; }
+      if (!user || pass.length < 4) { err.textContent = 'Choose a username and a password of at least 4 characters.'; return; }
+      if (pass !== pass2) { err.textContent = 'Passwords do not match.'; return; }
+      if (state.hospitalAccounts.find(a => a.username.toLowerCase() === user.toLowerCase())) { err.textContent = 'That username is already taken.'; return; }
+      const newHospital = { id: uid(), name, city, dosesLogged: 0, rating: 5.0 };
+      state.hospitals.push(newHospital);
+      state.hospitalAccounts.push({ id: newHospital.id, username: user, password: pass, hospitalId: newHospital.id });
+      save();
+      loggedInHospitalId = newHospital.id; loggedInPhone = null;
+      localStorage.setItem('vaxai_hospital_id', newHospital.id);
+      localStorage.removeItem('vaxai_parent_phone');
+      toast(name + ' registered. Welcome!');
+      setRole('hospital');
+      return;
+    }
+
+    // ---- ADMIN ----
+    if (pendingRole === 'admin' && authMode === 'signin') {
+      const user = (document.getElementById('loginUser').value || '').trim();
+      const pass = document.getElementById('loginPass').value || '';
+      const account = state.adminAccounts.find(a => a.username === user && a.password === pass);
+      if (!account) { err.textContent = 'Incorrect admin username or password.'; return; }
+      loggedInPhone = null; loggedInHospitalId = null;
+      localStorage.removeItem('vaxai_parent_phone');
+      localStorage.removeItem('vaxai_hospital_id');
+      setRole('admin');
+      return;
+    }
+
+    if (pendingRole === 'admin' && authMode === 'signup') {
+      const user = (document.getElementById('suUser').value || '').trim();
+      const pass = document.getElementById('suPass').value || '';
+      const pass2 = document.getElementById('suPass2').value || '';
+      if (!user || pass.length < 4) { err.textContent = 'Choose a username and a password of at least 4 characters.'; return; }
+      if (pass !== pass2) { err.textContent = 'Passwords do not match.'; return; }
+      if (state.adminAccounts.find(a => a.username.toLowerCase() === user.toLowerCase())) { err.textContent = 'That username is already taken.'; return; }
+      state.adminAccounts.push({ username: user, password: pass });
+      save();
+      loggedInPhone = null; loggedInHospitalId = null;
+      localStorage.removeItem('vaxai_parent_phone');
+      localStorage.removeItem('vaxai_hospital_id');
+      toast('Admin account created. Welcome!');
+      setRole('admin');
+      return;
+    }
+  }
+
+  function logout() {
+    currentRole = null;
+    loggedInPhone = null;
+    loggedInHospitalId = null;
+    localStorage.removeItem('vaxai_role');
+    localStorage.removeItem('vaxai_parent_phone');
+    localStorage.removeItem('vaxai_hospital_id');
+    showRoleGate(true);
+  }
+
+  function applyRoleUI() {
+    const role = currentRole || 'parent';
+    const meta = ROLE_META[role];
+    const shell = document.getElementById('appShell');
+    shell.classList.remove('role-parent', 'role-hospital', 'role-admin');
+    shell.classList.add('role-' + role);
+
+    const badge = document.getElementById('roleBadge');
+    badge.dataset.role = role;
+    const dict = I18N[lang] || I18N.en;
+    badge.textContent = meta.icon + ' ' + (dict['role_' + role] || meta.label);
+
+    document.querySelectorAll('.nav-btn[data-roles]').forEach(btn => {
+      const allowed = btn.dataset.roles.split(',').map(s => s.trim());
+      btn.hidden = !allowed.includes(role);
+    });
+
+    document.querySelectorAll('[data-role-only]').forEach(el => {
+      const allowed = el.getAttribute('data-role-only').split(',').map(s => s.trim());
+      el.hidden = !allowed.includes(role);
+    });
+
+    // Hide empty nav sections inside scroll area
+    const scroll = document.getElementById('sidebarNav');
+    if (scroll) {
+      scroll.querySelectorAll('.nav-section').forEach(sec => {
+        let el = sec.nextElementSibling;
+        let visible = false;
+        while (el && !el.classList.contains('nav-section')) {
+          if (el.classList.contains('nav-btn') && !el.hidden) visible = true;
+          el = el.nextElementSibling;
+        }
+        sec.hidden = !visible;
+      });
+    }
+
+    const cta = document.getElementById('topCta');
+    if (cta) {
+      cta.setAttribute('data-view-jump', meta.cta.view);
+      cta.textContent = meta.cta.text;
+    }
+
+    const campsSub = document.getElementById('campsSub');
+    if (campsSub) {
+      campsSub.textContent = role === 'parent'
+        ? 'Book slots at camps published by Admin & Hospital — your booking syncs network-wide.'
+        : role === 'hospital'
+        ? 'Host camp days and see parent bookings. Publishing here appears on Parent Camp Map instantly.'
+        : 'Publish network camps. Hospitals can host; parents book from their workspace.';
+    }
+  }
+
+  function setRole(role, opts = {}) {
+    if (!ROLE_META[role]) return;
+    currentRole = role;
+    localStorage.setItem('vaxai_role', role);
+    applyRoleUI();
+    showRoleGate(false);
+    if (!opts.silent) toast('Entered ' + ROLE_META[role].label);
+    go(roleHome(role));
+    refreshAll();
+  }
+
+  function go(view) {
+    // Role home aliases
+    if (view === 'home' && currentRole === 'hospital') view = 'hospital';
+    if (view === 'home' && currentRole === 'admin') view = 'admin';
+
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view && !b.hidden));
+    const el = document.getElementById('view-' + view);
+    if (el) el.classList.add('active');
+    document.getElementById('sidebar').classList.remove('open');
+    if (view === 'analytics' || view === 'admin') setTimeout(renderCharts, 50);
+    if (view === 'map') setTimeout(initMap, 80);
+    if (view === 'certificate') renderCertificate();
+    if (view === 'hospital') renderHospital();
+    if (view === 'admin') renderAdmin();
+    if (view === 'register') {
+      const phoneEl = document.getElementById('cPhone');
+      if (phoneEl && currentRole === 'parent' && loggedInPhone) {
+        phoneEl.value = loggedInPhone;
+        phoneEl.readOnly = true;
+      } else if (phoneEl) {
+        phoneEl.readOnly = false;
+      }
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function bridgeHtml(items) {
+    return items.map(([t, s, v]) =>
+      `<button type="button" class="bridge-card" data-act="${v}"><strong>${t}</strong><span>${s}</span></button>`
+    ).join('');
+  }
+
+  function renderHome() {
+    document.getElementById('greeting').textContent = greetingText();
+    const myChildren = visibleChildren();
+    const score = avgProtection(myChildren);
+    const risk = riskLevel(score);
+    document.getElementById('homeScoreVal').textContent = score + '%';
+    document.getElementById('homeScoreTxt').textContent = score + '%';
+    document.getElementById('homeRisk').textContent = 'Risk ' + risk.label;
+    document.getElementById('homeRiskBig').textContent = risk.label;
+    document.getElementById('homeRiskMeta').textContent = score >= 90 ? 'Excellent coverage' : score >= 70 ? 'Catch-up recommended' : 'Action needed';
+    setRing(document.getElementById('homeRing'), score);
+
+    const primary = myChildren[0];
+    const nv = primary ? nextVaccine(primary) : null;
+    if (nv) {
+      const days = daysBetween(today(), nv.due);
+      document.getElementById('homeNext').textContent = nv.name;
+      document.getElementById('homeNextMeta').textContent = (days >= 0 ? 'in ' + days + ' days' : 'overdue by ' + Math.abs(days) + ' days') + ' · ' + primary.name;
+    } else {
+      document.getElementById('homeNext').textContent = 'All caught up';
+      document.getElementById('homeNextMeta').textContent = 'Great work';
+    }
+
+    const camp = nearestCamp();
+    if (camp) {
+      document.getElementById('homeCamp').textContent = camp.dist.toFixed(1) + ' km';
+      document.getElementById('homeCampMeta').textContent = camp.name;
+    }
+
+    document.getElementById('dailyTip').textContent = TIPS[new Date().getDate() % TIPS.length];
+    document.getElementById('streakPill').textContent = '🔥 ' + state.streak + ' day streak';
+
+    let missed = 0, upcoming = 0, done = 0, total = 0;
+    myChildren.forEach(c => {
+      childSchedule(c).forEach(v => {
+        if (ageDays(c.dob) < v.ageDays - 7) return;
+        total++; if (v.done) done++; else if (v.status === 'missed') missed++; else upcoming++;
+      });
+    });
+    const completion = total ? Math.round(done / total * 100) : 0;
+    document.getElementById('homeCompletion').textContent = completion + '%';
+    document.getElementById('homeCompletionBar').style.width = completion + '%';
+    document.getElementById('homeMissed').textContent = missed;
+    document.getElementById('homeUpcoming').textContent = upcoming;
+    const syncEl = document.getElementById('parentSyncHint');
+    if (syncEl) {
+      const latest = myChildren.map(c => c.lastDoseAt).filter(Boolean).sort().reverse()[0];
+      syncEl.textContent = latest || 'Waiting';
+    }
+
+    document.getElementById('homeActions').innerHTML = [
+      ['Register Child', 'Add a family profile', 'register'],
+      ['Book Camp', 'Camps from Admin / Hospital', 'camps'],
+      ['Download Certificate', 'Updated after clinic doses', 'certificate'],
+      ['Ask AI', 'Family vaccine guide', 'ai']
+    ].map(([t,s,v]) => `<button class="action-tile" data-act="${v}"><strong>${t}</strong><span>${s}</span></button>`).join('');
+
+    const pb = document.getElementById('parentBridge');
+    if (pb) pb.innerHTML = bridgeHtml([
+      ['Children Registry', 'See hospital-synced coverage', 'parent'],
+      ['Open Timeline', 'Apple-style dose journey', 'timeline'],
+      ['Switch to Hospital', 'Preview clinic workspace', 'role:hospital']
+    ]);
+
+    const badges = [
+      { id: 'first_child', emoji: '🌱', name: 'First Child' },
+      { id: 'on_time', emoji: '⏱️', name: 'On-Time Hero' },
+      { id: 'full_cover', emoji: '🛡️', name: 'Full Coverage' },
+      { id: 'camp_goer', emoji: '🏕️', name: 'Camp Champion' },
+      { id: 'streak_7', emoji: '🔥', name: '7-Day Streak' }
+    ];
+    if (completion >= 95 && !state.achievements.includes('full_cover')) state.achievements.push('full_cover');
+    if (state.streak >= 7 && !state.achievements.includes('streak_7')) state.achievements.push('streak_7');
+    document.getElementById('badgeRow').innerHTML = badges.map(b =>
+      `<div class="badge-card ${state.achievements.includes(b.id) ? '' : 'locked'}"><div class="emoji">${b.emoji}</div><div style="font-size:12px;font-weight:700">${b.name}</div></div>`
+    ).join('');
+  }
+
+  function renderParent() {
+    const list = visibleChildren();
+    const cards = list.slice(0, 3).map(c => {
+      const s = protectionScore(c); const r = riskLevel(s); const n = nextVaccine(c);
+      return `<div class="glass card"><div class="card-label">${c.name}</div><div class="card-value" style="font-size:26px">${s}%</div><div class="card-meta"><span class="pill ${r.pill}">${r.label} risk</span> · Next: ${n ? n.name : '—'}</div><div class="progress-bar"><i style="width:${s}%"></i></div><div class="card-meta" style="margin-top:8px">Last clinic: ${c.lastHospital || '—'}</div></div>`;
+    }).join('');
+    document.getElementById('parentCards').innerHTML = cards || '<div class="empty">No children yet</div>';
+    document.getElementById('parentTable').innerHTML = list.map(c => {
+      const s = protectionScore(c); const n = nextVaccine(c);
+      return `<tr><td><strong>${c.name}</strong><div class="card-meta">${c.parent}</div></td><td>${c.dob}</td><td>${c.gender}</td><td><span class="pill pill-info">${s}%</span></td><td>${n ? n.name : 'Complete'}</td><td>${c.lastHospital || '—'}<div class="card-meta">${c.lastDoseAt || ''}</div></td><td><button class="btn btn-ghost" data-open-tl="${c.id}">Timeline</button></td></tr>`;
+    }).join('');
+    const prb = document.getElementById('parentRegistryBridge');
+    if (prb) prb.innerHTML = bridgeHtml([
+      ['Family Home', 'Protection score & tips', 'home'],
+      ['Certificate', 'QR proof from clinic doses', 'certificate'],
+      currentRole === 'admin' ? ['Clinic Home', 'Open Hospital workspace', 'role:hospital'] : ['Ask Hospital path', 'Switch role to log a demo dose', 'role:hospital']
+    ]);
+  }
+
+  function fillChildSelects() {
+    const scopedOpts = visibleChildren().map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    const allOpts = state.children.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    ['timelineChild','certChild','aefiChild'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = scopedOpts || '<option value="">No children</option>';
+    });
+    const doseEl = document.getElementById('doseChild');
+    if (doseEl) doseEl.innerHTML = allOpts || '<option value="">No children</option>';
+    document.getElementById('doseVaccine').innerHTML = SCHEDULE.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
+    const dh = document.getElementById('doseHospital');
+    if (dh) dh.innerHTML = state.hospitals.map(h => `<option value="${h.id}">${h.name}</option>`).join('');
+  }
+
+  function renderHospital() {
+    const g = document.getElementById('hospGreeting');
+    if (g) g.textContent = greetingText().replace('👋', '') + '· Clinic';
+    const totalDoses = state.children.reduce((n,c) => n + Object.keys(c.doses).length, 0);
+    const dueCount = state.children.filter(c => {
+      const n = nextVaccine(c);
+      if (!n) return false;
+      const d = daysBetween(today(), n.due);
+      return d <= 14;
+    }).length;
+    document.getElementById('hospStats').innerHTML = [
+      ['Doses in network', totalDoses, 'Synced to Parent certificates'],
+      ['Due ≤ 14 days', dueCount, 'Clinic queue'],
+      ['Partner hospitals', state.hospitals.length, 'Active facilities'],
+      ['AEFI open', state.aefi.length, 'Shared with Admin']
+    ].map(([l,v,m]) => `<div class="glass card"><div class="card-label">${l}</div><div class="card-value">${v}</div><div class="card-meta">${m}</div></div>`).join('');
+
+    document.getElementById('hospList').innerHTML = state.hospitals.map(h =>
+      `<div class="stat-mini"><div><strong>${h.name}</strong><div class="card-meta">${h.city}</div></div><div><span class="pill pill-ok">${h.rating}★</span> ${h.dosesLogged} doses</div></div>`
+    ).join('');
+
+    const queue = state.children.map(c => {
+      const n = nextVaccine(c);
+      if (!n) return null;
+      const d = daysBetween(today(), n.due);
+      if (d > 21) return null;
+      return { c, n, d };
+    }).filter(Boolean).sort((a,b) => a.d - b.d);
+
+    const hq = document.getElementById('hospQueue');
+    if (hq) {
+      hq.innerHTML = queue.length ? queue.map(({c,n,d}) =>
+        `<div class="notif-item"><strong>${c.name}</strong>Due: ${n.name} · ${d < 0 ? 'overdue '+Math.abs(d)+'d' : 'in '+d+'d'}<div class="card-meta">Parent: ${c.parent} · Coverage ${protectionScore(c)}%</div>
+        <button class="btn btn-primary" style="margin-top:8px" data-prefill-dose="${c.id}" data-vax="${n.id}">Prep dose log</button></div>`
+      ).join('') : '<div class="empty">No urgent due doses</div>';
+    }
+
+    const hb = document.getElementById('hospBridge');
+    if (hb) hb.innerHTML = bridgeHtml([
+      ['Children Registry', 'Parent-registered profiles', 'parent'],
+      ['Verify Certificate', 'QR desk for walk-ins', 'verify'],
+      ['Publish / view camps', 'Parents can book these', 'camps'],
+      ['Admin Network Home', 'See coverage impact', 'role:admin']
+    ]);
+  }
+
+  function renderAdmin() {
+    const ag = document.getElementById('adminGreeting');
+    if (ag) ag.textContent = 'Network Home';
+    const parentNotifs = state.notifications.filter(n => !n.audience || n.audience === 'all' || n.audience === 'parent').length;
+    document.getElementById('adminStats').innerHTML = [
+      ['Children', state.children.length, 'From Parent registration'],
+      ['Avg Protection', avgProtection() + '%', 'Hospital dose driven'],
+      ['Camps live', state.camps.length, 'Bookable by parents'],
+      ['Unread signals', state.notifications.filter(n => !n.read).length, 'Cross-role feed']
+    ].map(([l,v,m]) => `<div class="glass card"><div class="card-label">${l}</div><div class="card-value">${v}</div><div class="card-meta">${m}</div></div>`).join('');
+
+    document.getElementById('adminActivity').innerHTML = state.notifications.slice(0, 8).map(n =>
+      `<div class="notif-item"><strong>${n.title}</strong>${n.body}<div class="card-meta">${n.type} · ${(n.audience||'all')} · ${n.at}</div></div>`
+    ).join('');
+
+    const ab = document.getElementById('adminBridge');
+    if (ab) ab.innerHTML = bridgeHtml([
+      ['Clinic Home', 'Hospital dose logging', 'role:hospital'],
+      ['Parent Family Home', 'Family protection view', 'role:parent'],
+      ['Analytics', 'Coverage & trends', 'analytics'],
+      ['Publish Camp', 'Appears on Parent map', 'camps'],
+      ['AEFI Oversight', 'Reports from all roles', 'aefi'],
+      ['Children Registry', 'Full network roster', 'parent']
+    ]);
+  }
+
+  function renderTimeline() {
+    const id = document.getElementById('timelineChild').value;
+    const scope = visibleChildren();
+    const child = scope.find(c => c.id === id) || scope[0];
+    if (!child) { document.getElementById('timelineList').innerHTML = '<div class="empty">Register a child first</div>'; return; }
+    document.getElementById('timelineList').innerHTML = childSchedule(child).map(v =>
+      `<div class="tl-item ${v.status}"><div class="tl-title">${v.name} <span class="pill ${v.status==='done'?'pill-ok':v.status==='missed'?'pill-danger':v.status==='current'?'pill-info':'pill-warn'}">${v.status}</span></div><div class="tl-meta">${v.group} · Due ${v.due}${v.given ? ' · Given ' + v.given : ''}</div></div>`
+    ).join('');
+  }
+
+  function renderCamps() {
+    const canBook = currentRole === 'parent';
+    const title = document.getElementById('campListTitle');
+    if (title) title.textContent = canBook ? 'Book a camp' : 'Published camps';
+    document.getElementById('campList').innerHTML = state.camps.map(c => {
+      const d = haversine(state.userLat, state.userLng, c.lat, c.lng);
+      return `<div class="notif-item"><strong>${c.name}</strong>${c.location} · ${c.date}<div class="card-meta">${d.toFixed(1)} km · ${c.booked}/${c.slots} booked · by ${c.publishedBy || 'network'}</div>
+      ${canBook ? `<button class="btn btn-primary" style="margin-top:8px" data-book="${c.id}">Book Slot</button>` : `<span class="pill pill-info" style="margin-top:8px;display:inline-flex">Visible on Parent home</span>`}</div>`;
+    }).join('') || '<div class="empty">No camps</div>';
+  }
+
+  function renderCertificate() {
+    const id = document.getElementById('certChild').value;
+    const scope = visibleChildren();
+    const child = scope.find(c => c.id === id) || scope[0];
+    if (!child) return;
+    const score = protectionScore(child);
+    const code = certCode(child);
+    document.getElementById('certStatus').textContent = score >= 70 ? 'Verified' : 'Partial Record';
+    document.getElementById('certMeta').innerHTML = `
+      <div><strong>Child</strong>${child.name}</div>
+      <div><strong>Date of Birth</strong>${child.dob}</div>
+      <div><strong>Guardian</strong>${child.parent}</div>
+      <div><strong>Protection Score</strong>${score}%</div>
+      <div><strong>Doses Recorded</strong>${Object.keys(child.doses).length}</div>
+      <div><strong>Last clinic sync</strong>${child.lastHospital || '—'} ${child.lastDoseAt ? '· '+child.lastDoseAt : ''}</div>
+      <div><strong>Certificate ID</strong>${code}</div>`;
+    const box = document.getElementById('qrBox');
+    box.innerHTML = '';
+    if (window.QRCode) new QRCode(box, { text: code, width: 112, height: 112 });
+    else box.textContent = code;
+  }
+
+  function renderNotifs() {
+    let visible = state.notifications.filter(n => !n.audience || n.audience === 'all' || n.audience === currentRole || currentRole === 'admin');
+    if (currentRole === 'parent') visible = visible.filter(n => !n.phone || n.phone === loggedInPhone);
+    const unread = visible.filter(n => !n.read).length;
+    document.getElementById('notifDot').style.display = unread ? 'block' : 'none';
+    document.getElementById('notifList').innerHTML = visible.map(n =>
+      `<div class="notif-item" style="opacity:${n.read?.7:1}"><strong>${n.title}</strong>${n.body}<div class="card-meta">${n.type} · ${(n.audience||'all')} · ${n.at}</div></div>`
+    ).join('') || '<div class="empty">All quiet</div>';
+    renderReminders();
+  }
+
+  function dueForReminder() {
+    return state.children.map(c => ({ child: c, next: nextVaccine(c) }))
+      .filter(x => x.next && daysBetween(today(), x.next.due) <= 7)
+      .sort((a, b) => daysBetween(today(), a.next.due) - daysBetween(today(), b.next.due));
+  }
+
+  function reminderMessage(child, next) {
+    const days = daysBetween(today(), next.due);
+    const when = days > 0 ? `in ${days} day(s), on ${next.due}` : days === 0 ? 'today' : `${Math.abs(days)} day(s) ago (overdue)`;
+    return `Hi ${child.parent}, this is a reminder that ${child.name}'s ${next.name} dose is due ${when}. Please visit ${child.lastHospital || 'your nearest immunization center'} to keep the schedule on track. — Horizon Hunters`;
+  }
+
+  function renderReminders() {
+    const box = document.getElementById('reminderList');
+    if (!box) return;
+    const due = dueForReminder();
+    box.innerHTML = due.map(({ child, next }) => {
+      const days = daysBetween(today(), next.due);
+      const statusPill = days < 0 ? 'pill-danger' : days <= 2 ? 'pill-warn' : 'pill-info';
+      const statusTxt = days < 0 ? `Overdue ${Math.abs(days)}d` : days === 0 ? 'Due today' : `Due in ${days}d`;
+      return `<div class="stat-mini" style="align-items:flex-start;flex-wrap:wrap;gap:8px">
+        <div><strong>${child.name}</strong><div class="card-meta">${child.parent} · ${next.name} · <span class="pill ${statusPill}">${statusTxt}</span></div></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-ghost" type="button" data-remind-app="${child.id}">🔔 In-App</button>
+          <button class="btn btn-ghost" type="button" data-remind-email="${child.id}">✉ Email</button>
+          <button class="btn btn-ghost" type="button" data-remind-wa="${child.id}">🟢 WhatsApp</button>
+        </div>
+      </div>`;
+    }).join('') || '<div class="empty">No dose reminders due right now</div>';
+  }
+
+  function renderAefi() {
+    const scopeIds = new Set(visibleChildren().map(c => c.id));
+    const reports = currentRole === 'parent' ? state.aefi.filter(a => scopeIds.has(a.childId)) : state.aefi;
+    document.getElementById('aefiList').innerHTML = reports.map(a => {
+      const c = state.children.find(x => x.id === a.childId);
+      return `<div class="notif-item"><strong>${c ? c.name : 'Child'} · ${a.severity}</strong>${a.symptom}<div class="card-meta">${a.notes || ''} · ${a.at}</div></div>`;
+    }).join('') || '<div class="empty">No AEFI reports</div>';
+  }
+
+  function chartColors() {
+    return { accent: '#0d9488', accent2: '#0891b2', warn: '#d97706', muted: getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#5a7278' };
+  }
+
+  function renderCharts() {
+    const col = chartColors();
+    const labels = SCHEDULE.slice(0, 8).map(v => v.name);
+    const coverage = labels.map((_, i) => {
+      const vid = SCHEDULE[i].id;
+      const due = state.children.filter(c => ageDays(c.dob) >= SCHEDULE[i].ageDays);
+      if (!due.length) return 100;
+      return Math.round(due.filter(c => c.doses[vid]).length / due.length * 100);
+    });
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul'];
+    const trends = [42, 55, 61, 70, 78, 85, Math.max(40, avgProtection())];
+    const campData = state.camps.map(c => c.booked);
+    const campLabels = state.camps.map(c => c.name.split(' ')[0]);
+    const hospLabels = state.hospitals.map(h => h.name.split(' ')[0]);
+    const hospData = state.hospitals.map(h => h.dosesLogged);
+
+    const mk = (id, type, data, labs, extra={}) => {
+      const canvas = document.getElementById(id);
+      if (!canvas || !window.Chart) return;
+      if (charts[id]) charts[id].destroy();
+      charts[id] = new Chart(canvas, {
+        type,
+        data: {
+          labels: labs,
+          datasets: [{ data, borderColor: col.accent, backgroundColor: type === 'line' ? 'rgba(13,148,136,.15)' : ['#0d9488','#0891b2','#0284c7','#14b8a6','#06b6d4','#22d3ee','#2dd4bf','#5eead4'], borderWidth: 2, tension: .4, fill: type==='line', borderRadius: 10, ...extra }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: type==='doughnut' ? {} : { x: { ticks: { color: col.muted }, grid: { display:false } }, y: { ticks: { color: col.muted }, grid: { color: 'rgba(128,128,128,.1)' } } }, animation: { duration: 900 } }
+      });
+    };
+    mk('chartCoverage', 'doughnut', coverage.slice(0,5), labels.slice(0,5));
+    mk('chartTrends', 'line', trends, months);
+    mk('chartCamps', 'bar', campData, campLabels);
+    mk('chartHosp', 'bar', hospData, hospLabels);
+    const adminCanvas = document.getElementById('adminChart');
+    if (adminCanvas && window.Chart) {
+      if (charts.adminChart) charts.adminChart.destroy();
+      charts.adminChart = new Chart(adminCanvas, {
+        type: 'bar',
+        data: { labels, datasets: [{ data: coverage, backgroundColor: '#0d9488', borderRadius: 10 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: col.muted, maxRotation: 45 }, grid:{display:false} }, y: { ticks:{color:col.muted}, grid:{ color:'rgba(128,128,128,.1)'} } } }
+      });
+    }
+  }
+
+  function initMap() {
+    if (!window.L) return;
+    const el = document.getElementById('leafletMap');
+    if (!mapReady) {
+      map = L.map(el).setView([state.userLat, state.userLng], 5);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+      L.marker([state.userLat, state.userLng]).addTo(map).bindPopup('You (approx.)');
+      state.camps.forEach(c => {
+        L.marker([c.lat, c.lng]).addTo(map).bindPopup(`<strong>${c.name}</strong><br>${c.location}<br>${c.date}`);
+      });
+      mapReady = true;
+    } else {
+      setTimeout(() => map.invalidateSize(), 100);
+    }
+    document.getElementById('mapDistances').innerHTML = state.camps.map(c => {
+      const d = haversine(state.userLat, state.userLng, c.lat, c.lng);
+      return `<div class="stat-mini"><span>${c.name}</span><strong>${d.toFixed(1)} km</strong></div>`;
+    }).join('');
+  }
+
+  function refreshAll() {
+    fillChildSelects();
+    renderHome();
+    renderParent();
+    renderHospital();
+    renderAdmin();
+    renderTimeline();
+    renderCamps();
+    renderCertificate();
+    renderNotifs();
+    renderAefi();
+    applyI18n();
+    save();
+  }
+
+  /* AI */
+  function aiReply(q) {
+    const text = q.toLowerCase();
+    if (/search\s+(\w+)/.test(text)) {
+      const name = text.match(/search\s+(\w+)/)[1];
+      const hits = visibleChildren().filter(c => c.name.toLowerCase().includes(name));
+      if (hits.length) { go('parent'); return `Found ${hits.length} match(es): ${hits.map(h => h.name + ' (' + protectionScore(h) + '% protected)').join(', ')}.`; }
+      return `No children matching “${name}”. Try Register Child.`;
+    }
+    if (/open|go to|show|navigate|switch/.test(text)) {
+      if (/parent/.test(text)) { setRole('parent'); return 'Switched to Parent Family Home.'; }
+      if (/hospital|clinic/.test(text)) { setRole('hospital'); return 'Switched to Hospital Clinic Home.'; }
+      if (/admin|network/.test(text)) { setRole('admin'); return 'Switched to Admin Network Home.'; }
+      const mapNav = { home:['home','family'], parent:['registry','children'], register:['register'], timeline:['timeline'], camps:['camp'], certificate:['cert'], verify:['verif'], analytics:['analytic'], aefi:['aefi'], notifications:['notif'], ocr:['ocr'], map:['map'] };
+      for (const [view, keys] of Object.entries(mapNav)) {
+        if (keys.some(k => text.includes(k))) { go(view); return `Opening ${view}.`; }
+      }
+    }
+    if (/dark|theme|light/.test(text)) { toggleTheme(); return 'Theme toggled.'; }
+    if (/next vaccine|upcoming/.test(text)) {
+      const c = visibleChildren()[0]; if (!c) return 'No children registered yet.';
+      const n = nextVaccine(c); return n ? `${c.name}'s next vaccine is ${n.name}, due ${n.due}.` : `${c.name} is fully up to date on the tracked schedule.`;
+    }
+    for (const item of KB) {
+      if (item.keys.some(k => text.includes(k))) return item.reply;
+    }
+    return 'I can explain vaccines (try “explain MMR”), search children (“search Aarav”), navigate (“open analytics”), or toggle dark mode. Press Ctrl+K for the command palette.';
+  }
+
+  function pushMsg(role, text) {
+    const div = document.createElement('div');
+    div.className = 'msg ' + role;
+    div.textContent = text;
+    document.getElementById('aiBody').appendChild(div);
+    document.getElementById('aiBody').scrollTop = 99999;
+  }
+
+  function askAI(q) {
+    if (!q.trim()) return;
+    pushMsg('user', q);
+    const reply = aiReply(q);
+    setTimeout(() => { pushMsg('bot', reply); speak(reply); }, 280);
+  }
+
+  function openAI(open) {
+    document.getElementById('aiPanel').classList.toggle('open', open);
+    document.getElementById('aiFab').classList.toggle('hidden', open);
+    if (open && !document.getElementById('aiBody').children.length) {
+      pushMsg('bot', 'Hi — I\'m Horizon Hunters. Ask about schedules, search a child, or say “open certificate”.');
+    }
+  }
+
+  /* Command palette */
+  const COMMANDS = [
+    { label: 'Register child', run: () => go('register') },
+    { label: 'Open certificate', run: () => go('certificate') },
+    { label: 'Book camp', run: () => go('camps') },
+    { label: 'Show analytics', run: () => go('analytics') },
+    { label: 'Open timeline', run: () => go('timeline') },
+    { label: 'Switch role / workspace', run: () => logout() },
+    { label: 'Open parent dashboard', run: () => setRole('parent') },
+    { label: 'Open hospital dashboard', run: () => setRole('hospital') },
+    { label: 'Open admin dashboard', run: () => setRole('admin') },
+    { label: 'Camp map', run: () => go('map') },
+    { label: 'OCR import', run: () => go('ocr') },
+    { label: 'AEFI reporting', run: () => go('aefi') },
+    { label: 'Notifications', run: () => go('notifications') },
+    { label: 'QR verification', run: () => go('verify') },
+    { label: 'Dark mode / theme', run: () => toggleTheme() },
+    { label: 'Ask AI assistant', run: () => openAI(true) },
+    { label: 'Explain MMR', run: () => { openAI(true); askAI('explain MMR'); } },
+    { label: 'Next vaccine', run: () => { openAI(true); askAI('next vaccine'); } },
+    { label: 'Search Aarav', run: () => { openAI(true); askAI('search Aarav'); } },
+    { label: 'Toggle language EN / Hindi / Tamil', run: () => toggleLang() }
+  ];
+
+  function openCmd(show) {
+    document.getElementById('cmdOverlay').classList.toggle('open', show);
+    if (show) {
+      document.getElementById('cmdInput').value = '';
+      renderCmd('');
+      setTimeout(() => document.getElementById('cmdInput').focus(), 50);
+    }
+  }
+
+  function renderCmd(q) {
+    const items = COMMANDS.filter(c => c.label.toLowerCase().includes(q.toLowerCase()));
+    cmdIndex = 0;
+    document.getElementById('cmdList').innerHTML = items.map((c,i) =>
+      `<div class="cmd-item ${i===0?'active':''}" data-cmd="${i}"><span>⌘</span><span>${c.label}</span></div>`
+    ).join('') || '<div class="empty">No commands</div>';
+    document.getElementById('cmdList').dataset.filtered = JSON.stringify(items.map(c => c.label));
+  }
+
+  function runFilteredCmd(i) {
+    const q = document.getElementById('cmdInput').value.toLowerCase();
+    const items = COMMANDS.filter(c => c.label.toLowerCase().includes(q));
+    if (items[i]) { items[i].run(); openCmd(false); toast(items[i].label); }
+  }
+
+  function toggleTheme() {
+    const html = document.documentElement;
+    const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('vaxai_theme', next);
+    document.getElementById('themeToggle').classList.toggle('on', next === 'dark');
+    setTimeout(renderCharts, 100);
+  }
+
+  /* Search */
+  function globalSearch(q) {
+    const drop = document.getElementById('searchDrop');
+    if (!q.trim()) { drop.classList.remove('open'); return; }
+    const ql = q.toLowerCase();
+    const hits = [];
+    visibleChildren().forEach(c => { if (c.name.toLowerCase().includes(ql) || c.parent.toLowerCase().includes(ql)) hits.push({ t: c.name, s: 'Child · ' + protectionScore(c) + '%', view: 'parent' }); });
+    state.hospitals.forEach(h => { if (h.name.toLowerCase().includes(ql) || h.city.toLowerCase().includes(ql)) hits.push({ t: h.name, s: 'Hospital · ' + h.city, view: 'hospital' }); });
+    state.camps.forEach(c => { if (c.name.toLowerCase().includes(ql) || c.location.toLowerCase().includes(ql)) hits.push({ t: c.name, s: 'Camp · ' + c.date, view: 'camps' }); });
+    state.children.forEach(c => { const code = certCode(c); if (code.toLowerCase().includes(ql) || 'certificate'.includes(ql)) hits.push({ t: 'Certificate · ' + c.name, s: code, view: 'certificate' }); });
+    state.aefi.forEach(a => { if ((a.symptom||'').toLowerCase().includes(ql)) hits.push({ t: 'AEFI · ' + a.symptom, s: a.severity, view: 'aefi' }); });
+    drop.innerHTML = hits.slice(0, 12).map(h => `<div class="search-hit" data-view="${h.view}"><strong>${h.t}</strong><small>${h.s}</small></div>`).join('') || '<div class="empty">No results</div>';
+    drop.classList.add('open');
+  }
+
+  /* Voice */
+  function setupVoice() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { toast('Speech recognition not supported in this browser'); return false; }
+    recognition = new SR();
+    recognition.lang = lang === 'ta' ? 'ta-IN' : lang === 'hi' ? 'hi-IN' : 'en-IN';
+    recognition.continuous = false;
+    recognition.onresult = (e) => {
+      const said = e.results[0][0].transcript.toLowerCase();
+      toast('Heard: ' + said);
+      if (/next vaccine/.test(said)) { openAI(true); askAI('next vaccine'); }
+      else if (/register/.test(said)) go('register');
+      else if (/dashboard|home|parent/.test(said)) go(/hospital/.test(said) ? 'hospital' : /admin/.test(said) ? 'admin' : 'parent');
+      else if (/certificate/.test(said)) go('certificate');
+      else if (/analytics/.test(said)) go('analytics');
+      else if (/camp|map/.test(said)) go(/map/.test(said) ? 'map' : 'camps');
+      else { openAI(true); askAI(said); }
+    };
+    recognition.onerror = () => toast('Voice error — try again');
+    return true;
+  }
+
+  /* OCR */
+  async function runOCR(file) {
+    if (!window.Tesseract) { toast('Tesseract.js failed to load — check network'); return; }
+    document.getElementById('ocrStatus').innerHTML = '<div class="skeleton" style="height:18px;width:60%"></div> Reading image…';
+    document.getElementById('ocrApply').disabled = true;
+    const { data: { text } } = await Tesseract.recognize(file, 'eng', {
+      logger: m => { if (m.status === 'recognizing text') document.getElementById('ocrStatus').textContent = 'Recognizing… ' + Math.round((m.progress||0)*100) + '%'; }
+    });
+    document.getElementById('ocrText').textContent = text;
+    document.getElementById('ocrStatus').textContent = 'Extraction complete — review and apply.';
+    ocrExtract = parseOCR(text);
+    document.getElementById('ocrApply').disabled = !ocrExtract;
+  }
+
+  function parseOCR(text) {
+    const out = {};
+    const name = text.match(/(?:name|child)\s*[:\-]?\s*([A-Za-z][A-Za-z\s]{2,40})/i);
+    const dob = text.match(/(?:dob|date of birth|born)\s*[:\-]?\s*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}|\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2})/i);
+    const gender = text.match(/\b(male|female|boy|girl)\b/i);
+    const vaccine = text.match(/\b(BCG|OPV|MMR|MR|HepB|Pentavalent|IPV|PCV|DPT)\b/i);
+    if (name) out.name = name[1].trim();
+    if (dob) {
+      let d = dob[1].replace(/\//g,'-');
+      const p = d.split('-');
+      if (p[0].length === 4) out.dob = d;
+      else if (p[2]) out.dob = (p[2].length===2?'20'+p[2]:p[2]) + '-' + p[1].padStart(2,'0') + '-' + p[0].padStart(2,'0');
+    }
+    if (gender) out.gender = /female|girl/i.test(gender[1]) ? 'Female' : 'Male';
+    if (vaccine) out.vaccine = vaccine[1];
+    return Object.keys(out).length ? out : null;
+  }
+
+  /* Events */
+  document.querySelectorAll('.nav-btn').forEach(b => b.addEventListener('click', () => go(b.dataset.view)));
+  document.querySelectorAll('[data-view-jump]').forEach(b => b.addEventListener('click', () => go(b.getAttribute('data-view-jump'))));
+  document.getElementById('menuToggle').onclick = () => document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('themeToggle').onclick = toggleTheme;
+  document.getElementById('langToggle').onclick = toggleLang;
+  document.getElementById('cmdOpen').onclick = () => openCmd(true);
+  document.getElementById('notifOpen').onclick = () => go('notifications');
+  document.getElementById('aiFab').onclick = () => openAI(true);
+  document.getElementById('aiClose').onclick = () => openAI(false);
+  document.getElementById('aiSend').onclick = () => { const i = document.getElementById('aiInput'); askAI(i.value); i.value=''; };
+  document.getElementById('aiInput').onkeydown = e => { if (e.key === 'Enter') { askAI(e.target.value); e.target.value=''; } };
+  document.getElementById('cmdOverlay').onclick = e => { if (e.target.id === 'cmdOverlay') openCmd(false); };
+  document.getElementById('cmdInput').oninput = e => renderCmd(e.target.value);
+  document.getElementById('cmdInput').onkeydown = e => {
+    const items = COMMANDS.filter(c => c.label.toLowerCase().includes(document.getElementById('cmdInput').value.toLowerCase()));
+    if (e.key === 'ArrowDown') { e.preventDefault(); cmdIndex = Math.min(cmdIndex+1, items.length-1); renderCmd(document.getElementById('cmdInput').value); document.querySelectorAll('.cmd-item').forEach((el,i)=>el.classList.toggle('active', i===cmdIndex)); }
+    if (e.key === 'ArrowUp') { e.preventDefault(); cmdIndex = Math.max(cmdIndex-1, 0); document.querySelectorAll('.cmd-item').forEach((el,i)=>el.classList.toggle('active', i===cmdIndex)); }
+    if (e.key === 'Enter') { e.preventDefault(); runFilteredCmd(cmdIndex); }
+    if (e.key === 'Escape') openCmd(false);
+  };
+  document.getElementById('cmdList').onclick = e => {
+    const item = e.target.closest('[data-cmd]');
+    if (item) runFilteredCmd(+item.dataset.cmd);
+  };
+
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openCmd(true); }
+  });
+
+  document.getElementById('globalSearch').oninput = e => globalSearch(e.target.value);
+  document.getElementById('globalSearch').onfocus = e => { if (e.target.value) globalSearch(e.target.value); };
+  document.querySelectorAll('[data-pick-role]').forEach(btn => {
+    btn.addEventListener('click', () => showLoginForm(btn.getAttribute('data-pick-role')));
+  });
+  document.getElementById('loginForm').addEventListener('submit', attemptLogin);
+  document.getElementById('loginBack').addEventListener('click', showRoleChoose);
+  document.querySelectorAll('[data-auth-mode]').forEach(btn => {
+    btn.addEventListener('click', () => setAuthTab(btn.getAttribute('data-auth-mode')));
+  });
+  document.getElementById('roleBadge').onclick = () => logout();
+  document.getElementById('switchRoleBtn').onclick = () => logout();
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.search-wrap')) document.getElementById('searchDrop').classList.remove('open');
+    const hit = e.target.closest('.search-hit');
+    if (hit) { go(hit.dataset.view); document.getElementById('searchDrop').classList.remove('open'); }
+    const act = e.target.closest('[data-act]');
+    if (act) {
+      const a = act.dataset.act;
+      if (a === 'ai') openAI(true);
+      else if (a.startsWith('role:')) { logout(); showLoginForm(a.slice(5)); }
+      else go(a);
+    }
+    const tl = e.target.closest('[data-open-tl]');
+    if (tl) { go('timeline'); document.getElementById('timelineChild').value = tl.dataset.openTl; renderTimeline(); }
+    const pref = e.target.closest('[data-prefill-dose]');
+    if (pref) {
+      go('hospital');
+      document.getElementById('doseChild').value = pref.dataset.prefillDose;
+      document.getElementById('doseVaccine').value = pref.dataset.vax;
+      toast('Dose form prepared');
+    }
+    const book = e.target.closest('[data-book]');
+    if (book) {
+      if (currentRole !== 'parent') { toast('Switch to Parent to book camps'); return; }
+      const camp = state.camps.find(c => c.id === book.dataset.book);
+      if (camp && camp.booked < camp.slots) {
+        camp.booked++;
+        if (!state.achievements.includes('camp_goer')) state.achievements.push('camp_goer');
+        state.notifications.unshift({ id: uid(), type: 'upcoming', title: 'Camp booked by parent', body: camp.name + ' on ' + camp.date, read: false, at: today(), audience: 'all' });
+        toast('Booked: ' + camp.name); refreshAll();
+      } else toast('No slots left');
+    }
+    const remindApp = e.target.closest('[data-remind-app]');
+    if (remindApp) {
+      const child = state.children.find(c => c.id === remindApp.dataset.remindApp);
+      const next = child && nextVaccine(child);
+      if (child && next) {
+        state.notifications.unshift({ id: uid(), type: 'upcoming', title: next.name + ' due for ' + child.name, body: reminderMessage(child, next), read: false, at: today(), audience: 'parent', phone: child.phone });
+        toast('In-app reminder sent to ' + child.parent);
+        refreshAll();
+      }
+    }
+    const remindEmail = e.target.closest('[data-remind-email]');
+    if (remindEmail) {
+      const child = state.children.find(c => c.id === remindEmail.dataset.remindEmail);
+      const next = child && nextVaccine(child);
+      if (!child || !next) return;
+      if (!child.email) { toast('No email on file for ' + child.parent + ' — add one in Register Child'); return; }
+      const subject = encodeURIComponent(next.name + ' vaccination reminder for ' + child.name);
+      const body = encodeURIComponent(reminderMessage(child, next));
+      window.open(`mailto:${child.email}?subject=${subject}&body=${body}`, '_blank');
+      toast('Email draft opened for ' + child.parent);
+    }
+    const remindWa = e.target.closest('[data-remind-wa]');
+    if (remindWa) {
+      const child = state.children.find(c => c.id === remindWa.dataset.remindWa);
+      const next = child && nextVaccine(child);
+      if (!child || !next) return;
+      if (!child.phone) { toast('No phone on file for ' + child.parent); return; }
+      const digits = child.phone.replace(/\D/g, '');
+      const waNumber = digits.length === 10 ? '91' + digits : digits;
+      const text = encodeURIComponent(reminderMessage(child, next));
+      window.open(`https://wa.me/${waNumber}?text=${text}`, '_blank');
+      toast('WhatsApp draft opened for ' + child.parent);
+    }
+  });
+
+  document.getElementById('childForm').onsubmit = e => {
+    e.preventDefault();
+    const child = {
+      id: uid(), name: cName.value.trim(), dob: cDob.value, gender: cGender.value,
+      parent: cParent.value.trim(), phone: (currentRole === 'parent' && loggedInPhone) ? loggedInPhone : cPhone.value.trim(),
+      email: cEmail.value.trim(), blood: cBlood.value.trim(),
+      address: cAddress.value.trim(), doses: {}, lastHospital: null, lastDoseAt: null, createdAt: today()
+    };
+    state.children.push(child);
+    if (!state.achievements.includes('first_child')) state.achievements.push('first_child');
+    state.notifications.unshift({ id: uid(), type: 'completed', title: 'Child registered', body: child.name + ' added — visible to Hospital & Admin.', read: false, at: today(), audience: 'all' });
+    state.streak += 1;
+    e.target.reset();
+    toast('Registered ' + child.name);
+    refreshAll();
+    go(currentRole === 'hospital' ? 'hospital' : 'parent');
+  };
+
+  document.getElementById('doseForm').onsubmit = e => {
+    e.preventDefault();
+    const child = state.children.find(c => c.id === doseChild.value);
+    if (!child) return;
+    const vax = doseVaccine.value;
+    const vaxName = (SCHEDULE.find(v => v.id === vax) || {}).name || vax;
+    const hosp = state.hospitals.find(h => h.id === (doseHospital && doseHospital.value)) || state.hospitals[0];
+    child.doses[vax] = doseDate.value || today();
+    child.lastHospital = hosp ? hosp.name : 'Clinic';
+    child.lastDoseAt = doseDate.value || today();
+    if (hosp) hosp.dosesLogged++;
+    if (!state.doseLog) state.doseLog = [];
+    state.doseLog.unshift({ id: uid(), childId: child.id, vaccine: vax, date: child.lastDoseAt, hospital: child.lastHospital, staff: (doseStaff && doseStaff.value) || '', batch: doseBatch.value || '' });
+    state.notifications.unshift({ id: uid(), type: 'completed', title: 'Hospital dose synced', body: child.name + ' — ' + vaxName + ' at ' + child.lastHospital + '. Parent certificate & Admin coverage updated.', read: false, at: today(), audience: 'all' });
+    state.streak += 1;
+    toast('Dose saved · synced to Parent & Admin');
+    refreshAll();
+  };
+
+  document.getElementById('campForm').onsubmit = e => {
+    e.preventDefault();
+    state.camps.unshift({
+      id: uid(), name: campName.value.trim(), date: campDate.value, location: campLoc.value.trim(),
+      slots: +campSlots.value || 50, booked: 0, publishedBy: currentRole || 'admin',
+      lat: state.userLat + (Math.random()-.5)*.2, lng: state.userLng + (Math.random()-.5)*.2
+    });
+    state.notifications.unshift({ id: uid(), type: 'upcoming', title: 'New camp published', body: campName.value.trim() + ' is now bookable on Parent Camp Map.', read: false, at: today(), audience: 'all' });
+    e.target.reset(); toast('Camp published · parents can book'); refreshAll();
+  };
+
+  document.getElementById('aefiForm').onsubmit = e => {
+    e.preventDefault();
+    state.aefi.unshift({ id: uid(), childId: aefiChild.value, severity: aefiSeverity.value, symptom: aefiSymptom.value.trim(), notes: aefiNotes.value.trim(), at: today(), byRole: currentRole });
+    state.notifications.unshift({ id: uid(), type: 'recommendation', title: 'AEFI filed (' + (currentRole||'user') + ')', body: aefiSymptom.value.trim(), read: false, at: today(), audience: 'all' });
+    e.target.reset(); toast('AEFI report submitted · visible to Admin'); refreshAll();
+  };
+
+  document.getElementById('verifyForm').onsubmit = e => {
+    e.preventDefault();
+    const code = verifyCode.value.trim().toUpperCase();
+    const child = state.children.find(c => certCode(c) === code);
+    const box = document.getElementById('verifyResult');
+    if (child) {
+      box.innerHTML = `<div class="notif-item"><span class="pill pill-ok">Valid</span><strong style="margin-top:8px">${child.name}</strong>Certificate authentic · Protection ${protectionScore(child)}% · ${Object.keys(child.doses).length} doses</div>`;
+      speak('Certificate verified for ' + child.name);
+    } else box.innerHTML = `<div class="notif-item"><span class="pill pill-danger">Invalid</span><div style="margin-top:8px">No matching certificate. Check the code on the PDF.</div></div>`;
+  };
+
+  document.getElementById('timelineChild').onchange = renderTimeline;
+  document.getElementById('certChild').onchange = renderCertificate;
+  document.getElementById('clearNotifs').onclick = () => { state.notifications.forEach(n => n.read = true); refreshAll(); toast('All caught up'); };
+
+  document.getElementById('dlPdf').onclick = () => {
+    const certScope = visibleChildren();
+    const child = certScope.find(c => c.id === certChild.value) || certScope[0];
+    if (!child || !window.jspdf) { toast('jsPDF unavailable'); return; }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFontSize(18); doc.text('Horizon Hunters Immunization Certificate', 20, 25);
+    doc.setFontSize(12);
+    doc.text('Child: ' + child.name, 20, 45);
+    doc.text('DOB: ' + child.dob, 20, 55);
+    doc.text('Guardian: ' + child.parent, 20, 65);
+    doc.text('Protection: ' + protectionScore(child) + '%', 20, 75);
+    doc.text('Certificate ID: ' + certCode(child), 20, 85);
+    doc.text('Doses: ' + Object.keys(child.doses).join(', '), 20, 95, { maxWidth: 170 });
+    doc.text('Verify this code in Horizon Hunters QR Verification.', 20, 120);
+    doc.save(child.name.replace(/\s+/g,'_') + '_certificate.pdf');
+    toast('PDF downloaded');
+  };
+
+  document.getElementById('ocrFile').onchange = e => { if (e.target.files[0]) runOCR(e.target.files[0]); };
+  document.getElementById('ocrApply').onclick = () => {
+    if (!ocrExtract) return;
+    go('register');
+    if (ocrExtract.name) cName.value = ocrExtract.name;
+    if (ocrExtract.dob) cDob.value = ocrExtract.dob;
+    if (ocrExtract.gender) cGender.value = ocrExtract.gender;
+    toast('Fields applied from OCR' + (ocrExtract.vaccine ? ' · Found ' + ocrExtract.vaccine : ''));
+  };
+
+  document.getElementById('voiceToggle').onclick = () => {
+    if (!voiceOn) {
+      if (!setupVoice()) return;
+      voiceOn = true;
+      document.getElementById('voiceToggle').classList.add('on');
+      recognition.start();
+      toast('Listening…');
+      speak('Voice enabled. Say next vaccine, register child, or open certificate.');
+    } else {
+      voiceOn = false;
+      document.getElementById('voiceToggle').classList.remove('on');
+      if (recognition) try { recognition.stop(); } catch {}
+      toast('Voice off');
+    }
+  };
+
+  document.querySelectorAll('.btn').forEach(btn => {
+    btn.addEventListener('pointerdown', e => {
+      const r = btn.getBoundingClientRect();
+      btn.style.setProperty('--x', ((e.clientX - r.left) / r.width * 100) + '%');
+      btn.style.setProperty('--y', ((e.clientY - r.top) / r.height * 100) + '%');
+    });
+  });
+
+  /* boot */
+  const savedTheme = localStorage.getItem('vaxai_theme');
+  if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
+  document.getElementById('themeToggle').classList.toggle('on', document.documentElement.getAttribute('data-theme') === 'dark');
+  document.getElementById('doseDate').value = today();
+
+  const sessionValid = currentRole === 'parent' ? !!loggedInPhone
+    : currentRole === 'hospital' ? !!loggedInHospitalId
+    : currentRole === 'admin' ? true
+    : false;
+
+  if (currentRole && ROLE_META[currentRole] && sessionValid) {
+    showRoleGate(false);
+    applyRoleUI();
+    refreshAll();
+    go(roleHome(currentRole));
+    setTimeout(() => {
+      const ring = document.getElementById('homeRing');
+      if (ring) setRing(ring, avgProtection(visibleChildren()));
+    }, 100);
+  } else {
+    currentRole = null;
+    showRoleGate(true);
+    applyRoleUI();
+    refreshAll();
+  }
+})();
+</script>
+</body>
+</html>
